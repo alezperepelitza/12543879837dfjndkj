@@ -55,6 +55,79 @@
             </div>
         </div>
     </div>
+    <div class="breathing-guide hidden">
+        <div class="breathing-circle"></div>
+        <div class="breathing-text">Вдох</div>
+    </div>
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="meditation">Медитация</button>
+        <button class="tab-btn" data-tab="breathing">Дыхание</button>
+        <button class="tab-btn" data-tab="stats">Статистика</button>
+        <button class="tab-btn" data-tab="settings">Настройки</button>
+    </div>
+
+    <div class="tab-content">
+        <div class="tab-pane active" id="meditation">
+            <!-- Существующий контент медитации -->
+        </div>
+        
+        <div class="tab-pane" id="breathing">
+            <div class="breathing-techniques">
+                <div class="technique-selector">
+                    <button data-technique="4-4-4-4">Квадратное дыхание</button>
+                    <button data-technique="4-7-8">4-7-8</button>
+                    <button data-technique="box">Техника Вима Хофа</button>
+                </div>
+                
+                <div class="breathing-guide">
+                    <div class="breathing-circle"></div>
+                    <div class="breathing-text">Подготовьтесь</div>
+                    <div class="breathing-timer">00:00</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane" id="stats">
+            <div class="achievements">
+                <h2>Достижения</h2>
+                <div class="achievement-grid">
+                    <!-- Достижения будут добавляться динамически -->
+                </div>
+            </div>
+            
+            <div class="meditation-calendar">
+                <h2>Календарь медитаций</h2>
+                <div class="calendar-grid">
+                    <!-- Календарь будет добавляться динамически -->
+                </div>
+            </div>
+            
+            <div class="leaderboard">
+                <h2>Рейтинг</h2>
+                <div class="leaderboard-list">
+                    <!-- Рейтинг будет добавляться динамически -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane" id="settings">
+            <div class="reminder-settings">
+                <h2>Напоминания</h2>
+                <div class="time-picker">
+                    <input type="time" id="reminder-time">
+                    <button class="set-reminder-btn">Установить напоминание</button>
+                </div>
+            </div>
+            
+            <div class="sound-settings">
+                <h2>Настройки звука</h2>
+                <div class="volume-control">
+                    <label>Громкость</label>
+                    <input type="range" min="0" max="100" value="50">
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="app.js"></script>
 </body>
-</html>
+</html> 
