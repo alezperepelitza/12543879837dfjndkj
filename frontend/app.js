@@ -231,15 +231,25 @@ class MeditationApp {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            // Вычисляем угол с учетом поворота таймера
-            let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI + 90;
+            // Вычисляем угол с учетом того, что таймер повернут на -90 градусов
+            let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
+            // Корректируем угол
             angle = (angle + 360) % 360;
 
             this.currentAngle = angle;
             this.duration = Math.round((angle / 360) * this.maxDuration);
-            if (this.duration < 1) this.duration = 1;
-            if (this.duration > this.maxDuration) this.duration = this.maxDuration;
+            
+            // Ограничиваем минимальное и максимальное значение
+            if (this.duration < 1) {
+                this.duration = 1;
+                angle = (1 / this.maxDuration) * 360;
+            }
+            if (this.duration > this.maxDuration) {
+                this.duration = this.maxDuration;
+                angle = 360;
+            }
 
+            // Обновляем UI с текущим углом
             this.updateUI(angle);
         }
     }
@@ -250,11 +260,7 @@ class MeditationApp {
 
     updateUI(angle, isCountdown = false) {
         // Обновляем время
-        if (!this.hasInteracted && !this.isActive) {
-            this.timeDisplay.textContent = '∞';
-            this.timeDisplay.classList.add('infinity');
-        } else if (!this.isActive) {
-            this.timeDisplay.classList.remove('infinity');
+        if (!this.isActive) {
             this.timeDisplay.textContent = this.duration;
         } else {
             const minutes = Math.floor(this.remainingTime / 60);
@@ -268,12 +274,7 @@ class MeditationApp {
         this.ringProgress.style.strokeDashoffset = offset;
 
         // Обновляем маркер
-        if (isCountdown) {
-            this.handle.style.transition = 'transform 1s linear';
-        } else {
-            this.handle.style.transition = 'transform 0.1s ease';
-        }
-        this.handle.style.transform = `rotate(${angle}deg)`;
+        this.handle.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
     }
 
     startMeditation() {
@@ -290,10 +291,10 @@ class MeditationApp {
         }, 300);
 
         this.remainingTime = this.duration * 60;
-        this.startAngle = (this.duration / this.maxDuration) * 360;
+        // Сохраняем начальный угол для правильного отсчета
+        this.startAngle = this.currentAngle || 360;
+        
         this.playSound();
-
-        // Запускаем таймер
         this.startTimer();
 
         // Запускаем выбранную технику дыхания, если она была выбрана
