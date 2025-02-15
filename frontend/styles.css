@@ -53,12 +53,12 @@ circle {
     height: 40px;
     background: var(--primary);
     border-radius: 50%;
-    top: 0;
+    top: -20px;
     left: 50%;
-    transform-origin: center 140px;
+    transform-origin: center 160px;
+    transform: translateX(-50%);
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(91, 127, 255, 0.5);
-    transition: transform 0.1s ease;
 }
 
 .handle::after {
@@ -701,4 +701,71 @@ button:active {
     opacity: 0;
     transform: translateX(-50%) translateY(-10px);
     transition: all 0.3s;
+}
+
+/* Стили для техник дыхания */
+.breathing-text {
+    position: absolute;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: #4CAF50;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.breathing-text.visible {
+    opacity: 1;
+}
+
+.breathing-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--bg);
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+}
+
+.breathing-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.breathing-list button {
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.breathing-list button:hover {
+    background: var(--primary);
+}
+
+/* Стили для кнопок управления */
+.control-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
 } 

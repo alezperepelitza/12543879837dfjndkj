@@ -9,9 +9,9 @@ class MeditationApp {
         this.isDragging = false;
         this.currentSound = 'silence';
         this.sounds = {
-            rain: new Audio('sounds/rain.mp3'),
-            forest: new Audio('sounds/forest.mp3'),
-            ocean: new Audio('sounds/ocean.mp3')
+            rain: new Audio('https://raw.githubusercontent.com/your-username/your-repo/main/frontend/sounds/rain.mp3'),
+            forest: new Audio('https://raw.githubusercontent.com/your-username/your-repo/main/frontend/sounds/forest.mp3'),
+            ocean: new Audio('https://raw.githubusercontent.com/your-username/your-repo/main/frontend/sounds/ocean.mp3')
         };
         
         // Загружаем статистику
@@ -59,13 +59,51 @@ class MeditationApp {
         this.startAngle = -90;
         this.currentAngle = 0;
 
-        // Предзагрузка звуков
+        // Предзагрузка звуков с обработкой ошибок
         Object.values(this.sounds).forEach(sound => {
             sound.load();
             sound.loop = true;
+            // Добавляем обработчик ошибок загрузки
+            sound.onerror = () => {
+                console.error('Ошибка загрузки звука:', sound.src);
+            };
         });
 
         this.hasInteracted = false;
+        this.isPaused = false;
+        this.currentBreathingTechnique = null;
+        this.breathingInterval = null;
+
+        // Техники дыхания
+        this.breathingTechniques = {
+            '4-4-4-4': {
+                name: 'Квадратное дыхание',
+                sequence: [
+                    { action: 'Вдох', duration: 4 },
+                    { action: 'Задержка', duration: 4 },
+                    { action: 'Выдох', duration: 4 },
+                    { action: 'Задержка', duration: 4 }
+                ]
+            },
+            '4-7-8': {
+                name: 'Техника 4-7-8',
+                sequence: [
+                    { action: 'Вдох', duration: 4 },
+                    { action: 'Задержка', duration: 7 },
+                    { action: 'Выдох', duration: 8 }
+                ]
+            },
+            'box': {
+                name: 'Коробочное дыхание',
+                sequence: [
+                    { action: 'Вдох', duration: 5 },
+                    { action: 'Задержка', duration: 5 },
+                    { action: 'Выдох', duration: 5 },
+                    { action: 'Задержка', duration: 5 }
+                ]
+            }
+        };
+
         this.initializeElements();
         this.initializeEventListeners();
         this.updateUI(0);
@@ -78,6 +116,10 @@ class MeditationApp {
         this.startButton = document.querySelector('.start');
         this.soundOptions = document.querySelectorAll('.sound-option');
         this.ringProgress = document.querySelector('.ring-progress');
+        this.pauseButton = document.querySelector('.pause');
+        this.breathingButton = document.querySelector('.breathing-techniques-btn');
+        this.breathingModal = document.querySelector('.breathing-modal');
+        this.breathingText = document.querySelector('.breathing-text');
     }
 
     initializeEventListeners() {
@@ -106,6 +148,28 @@ class MeditationApp {
             } else {
                 this.startMeditation();
             }
+        });
+
+        // Обработка паузы
+        this.pauseButton.addEventListener('click', () => {
+            this.togglePause();
+        });
+
+        // Обработка техник дыхания
+        this.breathingButton.addEventListener('click', () => {
+            this.breathingModal.classList.remove('hidden');
+        });
+
+        document.querySelector('.close-modal').addEventListener('click', () => {
+            this.breathingModal.classList.add('hidden');
+        });
+
+        document.querySelectorAll('.breathing-list button').forEach(button => {
+            button.addEventListener('click', () => {
+                const technique = button.dataset.technique;
+                this.startBreathingTechnique(technique);
+                this.breathingModal.classList.add('hidden');
+            });
         });
     }
 
@@ -187,6 +251,7 @@ class MeditationApp {
         this.startAngle = (this.duration / this.maxDuration) * 360;
         
         this.playSound();
+        this.pauseButton.classList.remove('hidden');
 
         this.timer = setInterval(() => {
             this.remainingTime--;
@@ -210,6 +275,8 @@ class MeditationApp {
         clearInterval(this.timer);
         this.stopSound();
         this.updateUI(0);
+        this.pauseButton.classList.add('hidden');
+        this.stopBreathingTechnique();
     }
 
     completeMeditation() {
@@ -237,7 +304,7 @@ class MeditationApp {
 
         // Запускаем новый звук, если медитация активна
         if (this.isActive && sound !== 'silence') {
-            this.sounds[sound].play().catch(console.error);
+            this.playSound();
         }
 
         // Обновляем только визуальное состояние кнопок
@@ -249,15 +316,22 @@ class MeditationApp {
     playSound() {
         if (this.currentSound !== 'silence' && this.sounds[this.currentSound]) {
             const sound = this.sounds[this.currentSound];
-            sound.play().catch(error => {
-                console.error('Ошибка воспроизведения звука:', error);
-                // Показываем уведомление пользователю
-                tg.showPopup({
-                    title: 'Ошибка звука',
-                    message: 'Не удалось воспроизвести звук. Проверьте разрешения браузера.',
-                    buttons: [{type: 'ok'}]
+            // Пробуем воспроизвести звук после взаимодействия пользователя
+            const playPromise = sound.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error('Ошибка воспроизведения звука:', error);
+                    if (error.name === 'NotAllowedError') {
+                        // Показываем уведомление только при ошибке разрешения
+                        tg.showPopup({
+                            title: 'Требуется разрешение',
+                            message: 'Для воспроизведения звука необходимо разрешение. Нажмите OK и разрешите воспроизведение.',
+                            buttons: [{type: 'ok'}]
+                        });
+                    }
                 });
-            });
+            }
         }
     }
 
@@ -368,6 +442,52 @@ class MeditationApp {
 
     saveAchievements() {
         localStorage.setItem('meditation_achievements', JSON.stringify(this.achievements));
+    }
+
+    togglePause() {
+        this.isPaused = !this.isPaused;
+        this.pauseButton.textContent = this.isPaused ? 'Продолжить' : 'Пауза';
+        
+        if (this.isPaused) {
+            clearInterval(this.timer);
+            this.stopSound();
+        } else {
+            this.startTimer();
+            this.playSound();
+        }
+    }
+
+    startBreathingTechnique(techniqueId) {
+        if (this.breathingInterval) {
+            clearInterval(this.breathingInterval);
+        }
+
+        const technique = this.breathingTechniques[techniqueId];
+        let stepIndex = 0;
+        let timeLeft = technique.sequence[0].duration;
+
+        this.breathingInterval = setInterval(() => {
+            if (this.isPaused) return;
+
+            const step = technique.sequence[stepIndex];
+            this.breathingText.textContent = `${step.action} (${timeLeft})`;
+            this.breathingText.classList.add('visible');
+
+            timeLeft--;
+
+            if (timeLeft < 0) {
+                stepIndex = (stepIndex + 1) % technique.sequence.length;
+                timeLeft = technique.sequence[stepIndex].duration;
+            }
+        }, 1000);
+    }
+
+    stopBreathingTechnique() {
+        if (this.breathingInterval) {
+            clearInterval(this.breathingInterval);
+            this.breathingInterval = null;
+        }
+        this.breathingText.classList.remove('visible');
     }
 }
 

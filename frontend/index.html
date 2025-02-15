@@ -20,6 +20,7 @@
                 <span class="life-label">жизнь</span>
                 <span class="time">∞</span>
                 <span class="label">минут</span>
+                <div class="breathing-text"></div>
             </div>
         </div>
 
@@ -44,7 +45,25 @@
             </div>
         </div>
 
-        <button class="start">Начать медитацию</button>
+        <!-- Кнопки управления -->
+        <div class="control-buttons">
+            <button class="breathing-techniques-btn">Техники дыхания</button>
+            <button class="start">Начать медитацию</button>
+            <button class="pause hidden">Пауза</button>
+        </div>
+        
+        <!-- Модальное окно с техниками дыхания -->
+        <div class="breathing-modal hidden">
+            <div class="modal-content">
+                <h3>Выберите технику дыхания</h3>
+                <div class="breathing-list">
+                    <button data-technique="4-4-4-4">Квадратное дыхание (4-4-4-4)</button>
+                    <button data-technique="4-7-8">Техника 4-7-8</button>
+                    <button data-technique="box">Коробочное дыхание</button>
+                </div>
+                <button class="close-modal">Закрыть</button>
+            </div>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>
