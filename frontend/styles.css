@@ -44,7 +44,7 @@ circle {
     stroke: var(--primary);
     stroke-dasharray: 283;
     stroke-dashoffset: 283;
-    transition: stroke-dashoffset 0.3s;
+    transition: stroke-dashoffset 0.3s linear;
 }
 
 .handle {
@@ -58,6 +58,7 @@ circle {
     transform-origin: center 140px;
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(91, 127, 255, 0.5);
+    transition: transform 0.1s ease;
 }
 
 .handle::after {
@@ -84,6 +85,7 @@ circle {
     font-size: 64px;
     font-weight: 300;
     display: block;
+    transition: opacity 0.3s;
 }
 
 .label {
@@ -631,4 +633,20 @@ button:active {
     border-radius: 8px;
     font-size: 14px;
     color: #856404;
+}
+
+/* Добавляем стиль для плавного движения при обратном отсчете */
+.handle.countdown {
+    transition: transform 1s linear;
+}
+
+/* Анимация для смены цифр */
+@keyframes numberChange {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.time.changing {
+    animation: numberChange 0.3s ease;
 } 

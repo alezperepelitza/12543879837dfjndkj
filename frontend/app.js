@@ -139,19 +139,30 @@ class MeditationApp {
         this.isDragging = false;
     }
 
-    updateUI(angle) {
+    updateUI(angle, isCountdown = false) {
         // Обновляем время
-        this.timeDisplay.textContent = this.duration;
+        if (!this.isActive) {
+            this.timeDisplay.textContent = this.duration;
+        } else {
+            const minutes = Math.floor(this.remainingTime / 60);
+            const seconds = this.remainingTime % 60;
+            this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
 
-        // Обновляем кольцо прогресса
+        // Обновляем кольцо прогресса с более быстрой анимацией
         const circumference = 283;
         const offset = circumference - ((angle / 360) * circumference);
         this.ringProgress.style.strokeDashoffset = offset;
 
-        // Обновляем маркер
+        // Обновляем маркер с плавной анимацией
+        if (isCountdown) {
+            this.handle.style.transition = 'transform 1s linear';
+        } else {
+            this.handle.style.transition = 'transform 0.1s ease';
+        }
         this.handle.style.transform = `rotate(${angle}deg)`;
 
-        // Обновляем активный звук
+        // Обновляем активный звук без изменения угла
         this.soundOptions.forEach(option => {
             option.classList.toggle('active', option.dataset.sound === this.currentSound);
         });
@@ -161,18 +172,18 @@ class MeditationApp {
         this.isActive = true;
         this.startButton.textContent = 'Остановить';
         this.remainingTime = this.duration * 60;
+        this.startAngle = this.currentAngle || 0;
         this.playSound();
 
         this.timer = setInterval(() => {
             this.remainingTime--;
             
-            const minutes = Math.floor(this.remainingTime / 60);
-            const seconds = this.remainingTime % 60;
-            this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
+            // Вычисляем угол для плавного движения маркера
             const progress = this.remainingTime / (this.duration * 60);
             const angle = progress * 360;
-            this.updateUI(angle);
+            
+            // Обновляем UI с флагом обратного отсчета
+            this.updateUI(angle, true);
 
             if (this.remainingTime <= 0) {
                 this.completeMeditation();
@@ -207,7 +218,10 @@ class MeditationApp {
         if (this.isActive) {
             this.playSound();
         }
-        this.updateUI(0);
+        // Не обновляем UI полностью, только звук
+        this.soundOptions.forEach(option => {
+            option.classList.toggle('active', option.dataset.sound === this.currentSound);
+        });
     }
 
     playSound() {
