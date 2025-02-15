@@ -17,19 +17,110 @@ body {
     max-width: 500px;
     margin: 0 auto;
     padding: 20px;
+    position: relative;
+}
+
+.app::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle at center,
+        var(--tg-theme-button-color) 0%,
+        transparent 70%
+    );
+    opacity: 0.1;
+    z-index: -1;
+    transition: opacity 0.5s;
+}
+
+.app.meditating::before {
+    opacity: 0.2;
+    animation: breatheBackground 4s infinite;
+}
+
+@keyframes breatheBackground {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.timer-display {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 30px auto;
 }
 
 .progress-circle {
-    width: 250px;
-    height: 250px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    border: 10px solid #eee;
-    margin: 20px auto;
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+    box-shadow: 
+        -8px -8px 16px rgba(255,255,255,0.05),
+        8px 8px 16px rgba(0,0,0,0.2);
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    overflow: hidden;
+}
+
+/* Добавляем светящийся эффект */
+.progress-circle::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    background: conic-gradient(
+        from -90deg,
+        var(--tg-theme-button-color) 0%,
+        transparent 60%,
+        transparent 100%
+    );
+    animation: rotate 10s linear infinite;
+    opacity: 0.1;
+}
+
+/* Добавляем пульсацию при медитации */
+.progress-circle.active {
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Добавляем частицы спокойствия */
+.particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.particle {
+    position: absolute;
+    background: var(--tg-theme-button-color);
+    border-radius: 50%;
+    opacity: 0;
+}
+
+@keyframes float {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    50% { opacity: 0.5; }
+    100% { transform: translateY(-100px) scale(0); opacity: 0; }
 }
 
 .time-selector {
@@ -43,25 +134,76 @@ body {
 
 .time-marker {
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 40px;
     background: var(--tg-theme-button-color);
     border-radius: 50%;
-    top: -10px;
+    top: -20px;
     left: 50%;
     transform: translateX(-50%);
     cursor: pointer;
-    transition: transform 0.1s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+}
+
+.time-marker::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .time-marker:hover {
-    transform: translateX(-50%) scale(1.2);
+    transform: translateX(-50%) scale(1.1);
+}
+
+.time-display {
+    text-align: center;
+    color: var(--tg-theme-text-color);
+    z-index: 2;
 }
 
 .time {
-    font-size: 2.5em;
-    font-weight: bold;
-    pointer-events: none;
+    font-size: 48px;
+    font-weight: 300;
+    display: block;
+}
+
+.time-label {
+    font-size: 16px;
+    opacity: 0.7;
+    display: block;
+    margin-top: 5px;
+}
+
+.circle-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        from -90deg,
+        var(--tg-theme-button-color) 0%,
+        transparent 0%
+    );
+    opacity: 0.2;
+}
+
+/* Добавляем анимацию для плавного изменения */
+@keyframes rotateGradient {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .controls {

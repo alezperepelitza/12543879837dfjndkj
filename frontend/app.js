@@ -52,6 +52,15 @@ class MeditationApp {
             }
         };
         
+        this.quotes = [
+            { text: "Дыши и отпускай", author: "Будда" },
+            { text: "Настоящее — единственное время, которое имеет значение", author: "Тич Нат Хан" },
+            { text: "В тишине рождается мудрость", author: "Конфуций" },
+            // Добавьте больше цитат
+        ];
+        
+        this.showRandomQuote();
+        
         this.initializeElements();
         this.initializeEventListeners();
         this.loadUserData();
@@ -60,6 +69,11 @@ class MeditationApp {
         this.initializeTabs();
         this.initializeSoundControls();
         this.initializeCircleSelector();
+        this.uiSounds = {
+            tick: new Audio('sounds/ui/tick.mp3'),
+            complete: new Audio('sounds/ui/complete.mp3'),
+            achievement: new Audio('sounds/ui/achievement.mp3')
+        };
     }
     
     initializeElements() {
@@ -214,15 +228,28 @@ class MeditationApp {
     }
     
     updateUI() {
-        // Обновляем отображение времени
+        // Обновляем отображение времени с анимацией
         const minutes = Math.floor(this.selectedDuration);
-        this.timeDisplay.textContent = `${String(minutes).padStart(2, '0')}:00`;
+        const timeDisplay = document.querySelector('.time');
         
-        // Обновляем прогресс-бар
-        if (!this.isActive) {
-            const degrees = (this.selectedDuration / this.maxDuration) * 360;
-            this.progressCircle.style.background = 
-                `conic-gradient(var(--tg-theme-button-color) ${degrees}deg, #eee ${degrees}deg)`;
+        // Анимируем изменение числа
+        const currentValue = parseInt(timeDisplay.textContent);
+        const diff = minutes - currentValue;
+        
+        if (diff !== 0) {
+            const step = diff > 0 ? 1 : -1;
+            let current = currentValue;
+            
+            const animate = () => {
+                current += step;
+                timeDisplay.textContent = String(current).padStart(2, '0');
+                
+                if ((step > 0 && current < minutes) || (step < 0 && current > minutes)) {
+                    requestAnimationFrame(animate);
+                }
+            };
+            
+            requestAnimationFrame(animate);
         }
     }
     
@@ -284,15 +311,21 @@ class MeditationApp {
     unlockAchievement(achievementId) {
         const achievement = this.achievements[achievementId];
         
-        // Показываем уведомление
-        tg.showPopup({
-            title: 'Новое достижение!',
-            message: `${achievement.icon} ${achievement.title}`,
-            buttons: [{type: 'ok'}]
-        });
+        // Создаем красивую анимацию достижения
+        const overlay = document.createElement('div');
+        overlay.className = 'achievement-overlay';
+        overlay.innerHTML = `
+            <div class="achievement-popup">
+                <div class="achievement-icon">${achievement.icon}</div>
+                <div class="achievement-info">
+                    <h3>Новое достижение!</h3>
+                    <p>${achievement.title}</p>
+                </div>
+            </div>
+        `;
         
-        // Сохраняем в статистику
-        this.saveAchievement(achievementId);
+        document.body.appendChild(overlay);
+        setTimeout(() => overlay.remove(), 3000);
     }
 
     initializeBreathing() {
@@ -473,9 +506,18 @@ class MeditationApp {
         if (this.selectedDuration < 1) this.selectedDuration = 1;
         if (this.selectedDuration > this.maxDuration) this.selectedDuration = this.maxDuration;
         
-        // Обновляем UI
+        // Обновляем UI с анимацией
         this.updateUI();
         this.updateMarkerPosition(angle);
+        
+        // Обновляем градиент
+        const gradient = document.querySelector('.circle-gradient');
+        const percentage = (this.selectedDuration / this.maxDuration) * 100;
+        gradient.style.background = `conic-gradient(
+            from -90deg,
+            var(--tg-theme-button-color) ${percentage}%,
+            transparent ${percentage}%
+        )`;
     }
     
     updateMarkerPosition(angle) {
@@ -489,6 +531,46 @@ class MeditationApp {
         
         // Обновляем позицию маркера
         marker.style.transform = `translate(${x}px, ${y}px)`;
+    }
+
+    showRandomQuote() {
+        const quote = this.quotes[Math.floor(Math.random() * this.quotes.length)];
+        const quoteElement = document.createElement('div');
+        quoteElement.className = 'meditation-quote';
+        quoteElement.innerHTML = `
+            <p class="quote-text">${quote.text}</p>
+            <p class="quote-author">— ${quote.author}</p>
+        `;
+        
+        document.querySelector('.timer-display').appendChild(quoteElement);
+    }
+
+    createParticles() {
+        const container = document.querySelector('.particles');
+        
+        const createParticle = () => {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.width = Math.random() * 10 + 5 + 'px';
+            particle.style.height = particle.style.width;
+            particle.style.animation = `float ${Math.random() * 2 + 2}s ease-out`;
+            
+            container.appendChild(particle);
+            setTimeout(() => particle.remove(), 4000);
+        };
+
+        if (this.isActive) {
+            createParticle();
+            setTimeout(() => this.createParticles(), Math.random() * 1000 + 500);
+        }
+    }
+
+    playUISound(sound) {
+        if (this.uiSounds[sound]) {
+            this.uiSounds[sound].currentTime = 0;
+            this.uiSounds[sound].play().catch(() => {});
+        }
     }
 }
 
