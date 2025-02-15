@@ -25,23 +25,26 @@ body {
     height: 100%;
 }
 
-.ring-background {
-    position: absolute;
+.ring-progress {
     width: 100%;
     height: 100%;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.1);
+    transform: rotate(-90deg);
 }
 
-.ring-progress {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid var(--primary-color);
-    clip: rect(0, var(--ring-size), var(--ring-size), calc(var(--ring-size) / 2));
-    transform: rotate(0deg);
-    transition: transform 0.3s ease;
+circle {
+    fill: none;
+    stroke-width: 3;
+}
+
+.ring-background {
+    stroke: rgba(255, 255, 255, 0.1);
+}
+
+.ring-foreground {
+    stroke: var(--primary-color);
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 0.3s ease;
 }
 
 .drag-handle {
@@ -50,12 +53,14 @@ body {
     height: 40px;
     background: var(--primary-color);
     border-radius: 50%;
-    top: -20px;
+    top: 0;
     left: 50%;
+    transform-origin: 50% 140px;
     transform: translateX(-50%);
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(91, 127, 255, 0.5);
     z-index: 2;
+    transition: transform 0.3s ease;
 }
 
 .drag-handle::after {
@@ -563,4 +568,13 @@ button:active {
     border-radius: 8px;
     font-size: 14px;
     color: #856404;
+}
+
+.section-title {
+    text-align: center;
+    color: var(--text-color);
+    font-size: 18px;
+    font-weight: 500;
+    margin: 30px 0 15px;
+    opacity: 0.8;
 } 

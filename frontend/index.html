@@ -13,10 +13,11 @@
             <!-- Основной круговой таймер -->
             <div class="timer-container">
                 <div class="timer-ring">
-                    <div class="ring-background"></div>
-                    <div class="ring-progress"></div>
+                    <svg class="ring-progress" viewBox="0 0 100 100">
+                        <circle class="ring-background" cx="50" cy="50" r="45"/>
+                        <circle class="ring-foreground" cx="50" cy="50" r="45"/>
+                    </svg>
                     <div class="drag-handle"></div>
-                    
                     <div class="timer-display">
                         <span class="time">20</span>
                         <span class="time-label">минут</span>
@@ -24,6 +25,7 @@
                 </div>
             </div>
 
+            <h3 class="section-title">Выберите аудио эффект</h3>
             <!-- Выбор звука -->
             <div class="sound-selector">
                 <div class="sound-option" data-sound="silence">
