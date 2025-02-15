@@ -9,48 +9,44 @@
 </head>
 <body>
     <div class="app">
-        <div class="meditation-screen">
-            <!-- Основной круговой таймер -->
-            <div class="timer-container">
-                <div class="timer-ring">
-                    <svg class="ring-progress" viewBox="0 0 100 100">
-                        <circle class="ring-background" cx="50" cy="50" r="45"/>
-                        <circle class="ring-foreground" cx="50" cy="50" r="45"/>
-                    </svg>
-                    <div class="drag-handle"></div>
-                    <div class="timer-display">
-                        <span class="time">20</span>
-                        <span class="time-label">минут</span>
-                    </div>
+        <!-- Основной круговой таймер -->
+        <div class="timer-container">
+            <div class="timer-ring">
+                <svg class="ring-progress" viewBox="0 0 100 100">
+                    <circle class="ring-background" cx="50" cy="50" r="45"/>
+                    <circle class="ring-foreground" cx="50" cy="50" r="45"/>
+                </svg>
+                <div class="drag-handle"></div>
+                <div class="timer-display">
+                    <span class="time">20</span>
+                    <span class="time-label">минут</span>
                 </div>
             </div>
-
-            <h3 class="section-title">Выберите аудио эффект</h3>
-            <!-- Выбор звука -->
-            <div class="sound-selector">
-                <div class="sound-option" data-sound="silence">
-                    <div class="sound-icon">🕊</div>
-                    <div class="sound-label">Тишина</div>
-                </div>
-                <div class="sound-option" data-sound="rain">
-                    <div class="sound-icon">🌧</div>
-                    <div class="sound-label">Дождь</div>
-                </div>
-                <div class="sound-option" data-sound="forest">
-                    <div class="sound-icon">🌲</div>
-                    <div class="sound-label">Лес</div>
-                </div>
-                <div class="sound-option" data-sound="ocean">
-                    <div class="sound-icon">🌊</div>
-                    <div class="sound-label">Океан</div>
-                </div>
-            </div>
-
-            <!-- Кнопка старта -->
-            <button class="start-button">
-                <span class="button-text">Начать медитацию</span>
-            </button>
         </div>
+
+        <!-- Выбор звука -->
+        <h3 class="section-title">Выберите аудио эффект</h3>
+        <div class="sound-selector">
+            <div class="sound-option" data-sound="silence">
+                <div class="sound-icon">🕊</div>
+                <div class="sound-label">Тишина</div>
+            </div>
+            <div class="sound-option" data-sound="rain">
+                <div class="sound-icon">🌧</div>
+                <div class="sound-label">Дождь</div>
+            </div>
+            <div class="sound-option" data-sound="forest">
+                <div class="sound-icon">🌲</div>
+                <div class="sound-label">Лес</div>
+            </div>
+            <div class="sound-option" data-sound="ocean">
+                <div class="sound-icon">🌊</div>
+                <div class="sound-label">Океан</div>
+            </div>
+        </div>
+
+        <!-- Кнопка старта -->
+        <button class="start-button">Начать медитацию</button>
 
         <!-- Статистика -->
         <div class="stats-container">

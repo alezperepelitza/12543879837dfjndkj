@@ -65,9 +65,18 @@ class MeditationApp {
     }
 
     initializeElements() {
+        // Проверяем, что все элементы находятся
+        console.log('Initializing elements...');
+        
         this.timerRing = document.querySelector('.timer-ring');
+        console.log('Timer ring:', this.timerRing);
+        
         this.dragHandle = document.querySelector('.drag-handle');
+        console.log('Drag handle:', this.dragHandle);
+        
         this.timeDisplay = document.querySelector('.time');
+        console.log('Time display:', this.timeDisplay);
+        
         this.startButton = document.querySelector('.start-button');
         this.soundOptions = document.querySelectorAll('.sound-option');
         this.ringProgress = document.querySelector('.ring-progress');
@@ -122,15 +131,17 @@ class MeditationApp {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            const angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
-            this.currentAngle = (angle - this.startAngle + 360) % 360;
+            // Вычисляем угол
+            let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
+            angle = (angle + 90 + 360) % 360; // Корректируем угол
 
             // Обновляем длительность
-            this.duration = Math.round((this.currentAngle / 360) * this.maxDuration);
+            this.duration = Math.round((angle / 360) * this.maxDuration);
             if (this.duration < 1) this.duration = 1;
             if (this.duration > this.maxDuration) this.duration = this.maxDuration;
 
-            this.updateUI();
+            // Обновляем UI
+            this.updateUI(angle);
         }
     }
 
@@ -138,18 +149,18 @@ class MeditationApp {
         this.isDragging = false;
     }
 
-    updateUI() {
+    updateUI(angle) {
         // Обновляем отображение времени
         this.timeDisplay.textContent = this.duration;
 
         // Обновляем кольцо прогресса
-        const progress = this.currentAngle / 360;
+        const progress = angle / 360;
         const circumference = 283; // 2 * π * 45 (радиус)
         const offset = circumference - (progress * circumference);
         document.querySelector('.ring-foreground').style.strokeDashoffset = offset;
 
         // Обновляем положение маркера
-        this.dragHandle.style.transform = `rotate(${this.currentAngle}deg) translateX(-50%)`;
+        this.dragHandle.style.transform = `rotate(${angle}deg)`;
     }
 
     startMeditation() {
@@ -172,7 +183,7 @@ class MeditationApp {
 
             // Обновляем маркер
             const angle = progress * 360;
-            this.dragHandle.style.transform = `rotate(${angle}deg) translateX(-50%)`;
+            this.dragHandle.style.transform = `rotate(${angle}deg)`;
 
             if (this.remainingTime <= 0) {
                 this.completeMeditation();
