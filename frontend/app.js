@@ -59,6 +59,13 @@ class MeditationApp {
         this.startAngle = -90;
         this.currentAngle = 0;
 
+        // Предзагрузка звуков
+        Object.values(this.sounds).forEach(sound => {
+            sound.load();
+            sound.loop = true;
+        });
+
+        this.hasInteracted = false;
         this.initializeElements();
         this.initializeEventListeners();
         this.updateUI(0);
@@ -84,13 +91,11 @@ class MeditationApp {
         document.addEventListener('mouseup', this.stopDragging.bind(this));
         document.addEventListener('touchend', this.stopDragging.bind(this));
 
-        // Обработка звуков
+        // Обработка звуков - разрешаем менять во время медитации
         this.soundOptions.forEach(option => {
             option.addEventListener('click', () => {
-                if (!this.isActive) {
-                    const sound = option.dataset.sound;
-                    this.changeSound(sound);
-                }
+                const sound = option.dataset.sound;
+                this.changeSound(sound);
             });
         });
 
@@ -113,6 +118,12 @@ class MeditationApp {
 
     handleDrag(e) {
         if (this.isDragging && !this.isActive) {
+            if (!this.hasInteracted) {
+                this.hasInteracted = true;
+                this.timer.classList.add('active');
+                this.timeDisplay.classList.remove('infinity');
+            }
+            
             e.preventDefault();
             
             const rect = this.timer.getBoundingClientRect();
@@ -141,7 +152,11 @@ class MeditationApp {
 
     updateUI(angle, isCountdown = false) {
         // Обновляем время
-        if (!this.isActive) {
+        if (!this.hasInteracted && !this.isActive) {
+            this.timeDisplay.textContent = '∞';
+            this.timeDisplay.classList.add('infinity');
+        } else if (!this.isActive) {
+            this.timeDisplay.classList.remove('infinity');
             this.timeDisplay.textContent = this.duration;
         } else {
             const minutes = Math.floor(this.remainingTime / 60);
@@ -149,30 +164,28 @@ class MeditationApp {
             this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        // Обновляем кольцо прогресса с более быстрой анимацией
+        // Обновляем кольцо прогресса
         const circumference = 283;
         const offset = circumference - ((angle / 360) * circumference);
         this.ringProgress.style.strokeDashoffset = offset;
 
-        // Обновляем маркер с плавной анимацией
+        // Обновляем маркер
         if (isCountdown) {
             this.handle.style.transition = 'transform 1s linear';
         } else {
             this.handle.style.transition = 'transform 0.1s ease';
         }
         this.handle.style.transform = `rotate(${angle}deg)`;
-
-        // Обновляем активный звук без изменения угла
-        this.soundOptions.forEach(option => {
-            option.classList.toggle('active', option.dataset.sound === this.currentSound);
-        });
     }
 
     startMeditation() {
         this.isActive = true;
         this.startButton.textContent = 'Остановить';
         this.remainingTime = this.duration * 60;
-        this.startAngle = this.currentAngle || 0;
+        
+        // Сохраняем начальный угол
+        this.startAngle = (this.duration / this.maxDuration) * 360;
+        
         this.playSound();
 
         this.timer = setInterval(() => {
@@ -180,7 +193,7 @@ class MeditationApp {
             
             // Вычисляем угол для плавного движения маркера
             const progress = this.remainingTime / (this.duration * 60);
-            const angle = progress * 360;
+            const angle = this.startAngle * progress;
             
             // Обновляем UI с флагом обратного отсчета
             this.updateUI(angle, true);
@@ -213,21 +226,38 @@ class MeditationApp {
     }
 
     changeSound(sound) {
-        this.stopSound();
+        const previousSound = this.currentSound;
         this.currentSound = sound;
-        if (this.isActive) {
-            this.playSound();
+
+        // Останавливаем предыдущий звук
+        if (previousSound !== 'silence' && this.sounds[previousSound]) {
+            this.sounds[previousSound].pause();
+            this.sounds[previousSound].currentTime = 0;
         }
-        // Не обновляем UI полностью, только звук
+
+        // Запускаем новый звук, если медитация активна
+        if (this.isActive && sound !== 'silence') {
+            this.sounds[sound].play().catch(console.error);
+        }
+
+        // Обновляем только визуальное состояние кнопок
         this.soundOptions.forEach(option => {
-            option.classList.toggle('active', option.dataset.sound === this.currentSound);
+            option.classList.toggle('active', option.dataset.sound === sound);
         });
     }
 
     playSound() {
         if (this.currentSound !== 'silence' && this.sounds[this.currentSound]) {
-            this.sounds[this.currentSound].loop = true;
-            this.sounds[this.currentSound].play().catch(console.error);
+            const sound = this.sounds[this.currentSound];
+            sound.play().catch(error => {
+                console.error('Ошибка воспроизведения звука:', error);
+                // Показываем уведомление пользователю
+                tg.showPopup({
+                    title: 'Ошибка звука',
+                    message: 'Не удалось воспроизвести звук. Проверьте разрешения браузера.',
+                    buttons: [{type: 'ok'}]
+                });
+            });
         }
     }
 
