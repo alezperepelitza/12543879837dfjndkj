@@ -9,9 +9,9 @@ class MeditationApp {
         this.isDragging = false;
         this.currentSound = 'silence';
         this.sounds = {
-            rain: new Audio('./sounds/rain.mp3'),
-            forest: new Audio('./sounds/forest.mp3'),
-            ocean: new Audio('./sounds/ocean.mp3')
+            rain: new Audio('sounds/rain.mp3'),
+            forest: new Audio('sounds/forest.mp3'),
+            ocean: new Audio('sounds/ocean.mp3')
         };
         
         // Загружаем статистику
