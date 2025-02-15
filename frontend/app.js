@@ -9,16 +9,16 @@ class MeditationApp {
         this.isDragging = false;
         this.currentSound = 'silence';
         this.sounds = {
-            rain: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/ambient/rain.mp3'),
-            forest: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/ambient/forest.mp3'),
-            ocean: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/ambient/ocean.mp3')
+            rain: new Audio('sounds/rain.mp3'),
+            forest: new Audio('sounds/forest.mp3'),
+            ocean: new Audio('sounds/ocean.mp3')
         };
         
         // Добавляем звуки для дыхательных техник
         this.breathingSounds = {
-            inhale: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/effects/inhale.mp3'),
-            exhale: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/effects/exhale.mp3'),
-            hold: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/effects/hold.mp3')
+            inhale: new Audio('sounds/inhale.mp3'),
+            exhale: new Audio('sounds/exhale.mp3'),
+            hold: new Audio('sounds/hold.mp3')
         };
         
         // Загружаем статистику
@@ -220,12 +220,6 @@ class MeditationApp {
 
     handleDrag(e) {
         if (this.isDragging && !this.isActive) {
-            if (!this.hasInteracted) {
-                this.hasInteracted = true;
-                this.timer.classList.add('active');
-                this.timeDisplay.classList.remove('infinity');
-            }
-            
             e.preventDefault();
             
             const rect = this.timer.getBoundingClientRect();
@@ -237,14 +231,16 @@ class MeditationApp {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
-            angle = (angle + 90 + 360) % 360;
+            // Вычисляем угол с учетом поворота таймера
+            let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI + 90;
+            angle = (angle + 360) % 360;
 
+            this.currentAngle = angle;
             this.duration = Math.round((angle / 360) * this.maxDuration);
             if (this.duration < 1) this.duration = 1;
             if (this.duration > this.maxDuration) this.duration = this.maxDuration;
 
-            this.updateUI(angle, true);
+            this.updateUI(angle);
         }
     }
 
@@ -299,6 +295,11 @@ class MeditationApp {
 
         // Запускаем таймер
         this.startTimer();
+
+        // Запускаем выбранную технику дыхания, если она была выбрана
+        if (this.currentBreathingTechnique) {
+            this.startBreathingTechnique(this.currentBreathingTechnique);
+        }
     }
 
     startTimer() {
@@ -324,7 +325,7 @@ class MeditationApp {
 
     stopMeditation() {
         this.isActive = false;
-        this.isPaused = false; // Сбрасываем состояние паузы
+        this.isPaused = false;
         
         // Анимируем возврат кнопок
         document.querySelector('.meditation-controls').classList.remove('visible');
@@ -336,8 +337,16 @@ class MeditationApp {
         clearInterval(this.timer);
         this.timer = null;
         this.stopSound();
+        
+        // Сбрасываем в начальное положение
+        this.duration = 20; // Начальное значение
+        this.currentAngle = 0;
         this.updateUI(0);
         this.stopBreathingTechnique();
+        
+        // Разрешаем перетаскивание
+        this.isDragging = false;
+        this.handle.style.pointerEvents = 'auto';
     }
 
     completeMeditation() {
@@ -529,6 +538,13 @@ class MeditationApp {
     }
 
     startBreathingTechnique(techniqueId) {
+        this.currentBreathingTechnique = techniqueId;
+        
+        // Если медитация не активна, просто сохраняем технику
+        if (!this.isActive) {
+            return;
+        }
+
         if (this.breathingInterval) {
             clearInterval(this.breathingInterval);
         }
@@ -560,8 +576,6 @@ class MeditationApp {
                 this.breathingText.textContent = `${step.action} (${timeLeft})`;
             }
         }, 1000);
-
-        this.currentBreathingTechnique = techniqueId;
     }
 
     playBreathingSound(action) {
