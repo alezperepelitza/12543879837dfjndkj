@@ -9,132 +9,56 @@
 </head>
 <body>
     <div class="app">
-        <div class="main-screen">
-            <h1>Медитация</h1>
-            <div class="timer-display">
-                <div class="progress-circle">
-                    <div class="time-selector">
-                        <div class="time-marker"></div>
-                    </div>
-                    <div class="time-display">
-                        <span class="time">00:00</span>
+        <div class="meditation-screen">
+            <!-- Основной круговой таймер -->
+            <div class="timer-container">
+                <div class="timer-ring">
+                    <div class="ring-background"></div>
+                    <div class="ring-progress"></div>
+                    <div class="drag-handle"></div>
+                    
+                    <div class="timer-display">
+                        <span class="time">20</span>
                         <span class="time-label">минут</span>
                     </div>
-                    <div class="circle-gradient"></div>
                 </div>
             </div>
-            
-            <div class="controls">
-                <div class="duration-selector">
-                    <button data-time="5">5 мин</button>
-                    <button data-time="10">10 мин</button>
-                    <button data-time="15">15 мин</button>
-                    <button data-time="20">20 мин</button>
-                    <button data-time="30">30 мин</button>
-                </div>
-                
-                <div class="sound-selector">
-                    <button data-sound="rain">Дождь 🌧</button>
-                    <button data-sound="forest">Лес 🌲</button>
-                    <button data-sound="ocean">Океан 🌊</button>
-                    <button data-sound="silence">Тишина 🕊</button>
-                </div>
-                
-                <button class="start-btn">Начать медитацию</button>
-            </div>
-        </div>
-        
-        <div class="stats-screen hidden">
-            <h2>Ваш прогресс</h2>
-            <div class="stats">
-                <div class="stat-item">
-                    <span class="stat-value">0</span>
-                    <span class="stat-label">Медитаций</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">0</span>
-                    <span class="stat-label">Минут</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value">0</span>
-                    <span class="stat-label">Звезд</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="breathing-guide hidden">
-        <div class="breathing-circle"></div>
-        <div class="breathing-text">Вдох</div>
-    </div>
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="meditation">Медитация</button>
-        <button class="tab-btn" data-tab="breathing">Дыхание</button>
-        <button class="tab-btn" data-tab="stats">Статистика</button>
-        <button class="tab-btn" data-tab="settings">Настройки</button>
-    </div>
 
-    <div class="tab-content">
-        <div class="tab-pane active" id="meditation">
-            <!-- Существующий контент медитации -->
+            <!-- Выбор звука -->
+            <div class="sound-selector">
+                <div class="sound-option" data-sound="silence">
+                    <div class="sound-icon">🕊</div>
+                    <div class="sound-label">Тишина</div>
+                </div>
+                <div class="sound-option" data-sound="rain">
+                    <div class="sound-icon">🌧</div>
+                    <div class="sound-label">Дождь</div>
+                </div>
+                <div class="sound-option" data-sound="forest">
+                    <div class="sound-icon">🌲</div>
+                    <div class="sound-label">Лес</div>
+                </div>
+                <div class="sound-option" data-sound="ocean">
+                    <div class="sound-icon">🌊</div>
+                    <div class="sound-label">Океан</div>
+                </div>
+            </div>
+
+            <!-- Кнопка старта -->
+            <button class="start-button">
+                <span class="button-text">Начать медитацию</span>
+            </button>
         </div>
-        
-        <div class="tab-pane" id="breathing">
-            <div class="breathing-techniques">
-                <div class="technique-selector">
-                    <button data-technique="4-4-4-4">Квадратное дыхание</button>
-                    <button data-technique="4-7-8">4-7-8</button>
-                    <button data-technique="box">Техника Вима Хофа</button>
-                </div>
-                
-                <div class="breathing-guide">
-                    <div class="breathing-circle"></div>
-                    <div class="breathing-text">Подготовьтесь</div>
-                    <div class="breathing-timer">00:00</div>
-                </div>
+
+        <!-- Статистика -->
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Дней подряд</div>
             </div>
-        </div>
-        
-        <div class="tab-pane" id="stats">
-            <div class="achievements">
-                <h2>Достижения</h2>
-                <div class="achievement-grid">
-                    <!-- Достижения будут добавляться динамически -->
-                </div>
-            </div>
-            
-            <div class="meditation-calendar">
-                <h2>Календарь медитаций</h2>
-                <div class="calendar-grid">
-                    <!-- Календарь будет добавляться динамически -->
-                </div>
-            </div>
-            
-            <div class="leaderboard">
-                <h2>Рейтинг</h2>
-                <div class="leaderboard-list">
-                    <!-- Рейтинг будет добавляться динамически -->
-                </div>
-            </div>
-        </div>
-        
-        <div class="tab-pane" id="settings">
-            <div class="reminder-settings">
-                <h2>Напоминания</h2>
-                <div class="time-picker">
-                    <input type="time" id="reminder-time">
-                    <button class="set-reminder-btn">Установить напоминание</button>
-                </div>
-            </div>
-            
-            <div class="sound-settings">
-                <h2>Настройки звука</h2>
-                <div class="volume-control">
-                    <label>Громкость</label>
-                    <input type="range" min="0" max="100" value="50">
-                </div>
-                <p class="sound-notice">
-                    ⚠️ Звуки природы работают только при активном приложении
-                </p>
+            <div class="stat-item">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Всего минут</div>
             </div>
         </div>
     </div>
