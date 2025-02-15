@@ -3,15 +3,15 @@ tg.expand();
 
 class MeditationApp {
     constructor() {
-        this.duration = 20; // начальная длительность в минутах
+        this.duration = 20;
         this.maxDuration = 60;
         this.isActive = false;
         this.isDragging = false;
         this.currentSound = 'silence';
         this.sounds = {
-            rain: new Audio('sounds/rain.mp3'),
-            forest: new Audio('sounds/forest.mp3'),
-            ocean: new Audio('sounds/ocean.mp3')
+            rain: new Audio('./sounds/rain.mp3'),
+            forest: new Audio('./sounds/forest.mp3'),
+            ocean: new Audio('./sounds/ocean.mp3')
         };
         
         // Загружаем статистику
@@ -61,31 +61,22 @@ class MeditationApp {
 
         this.initializeElements();
         this.initializeEventListeners();
-        this.updateUI();
+        this.updateUI(0);
     }
 
     initializeElements() {
-        // Проверяем, что все элементы находятся
-        console.log('Initializing elements...');
-        
-        this.timerRing = document.querySelector('.timer-ring');
-        console.log('Timer ring:', this.timerRing);
-        
-        this.dragHandle = document.querySelector('.drag-handle');
-        console.log('Drag handle:', this.dragHandle);
-        
+        this.timer = document.querySelector('.timer');
+        this.handle = document.querySelector('.handle');
         this.timeDisplay = document.querySelector('.time');
-        console.log('Time display:', this.timeDisplay);
-        
-        this.startButton = document.querySelector('.start-button');
+        this.startButton = document.querySelector('.start');
         this.soundOptions = document.querySelectorAll('.sound-option');
         this.ringProgress = document.querySelector('.ring-progress');
     }
 
     initializeEventListeners() {
         // Обработка перетаскивания
-        this.dragHandle.addEventListener('mousedown', this.startDragging.bind(this));
-        this.dragHandle.addEventListener('touchstart', this.startDragging.bind(this));
+        this.handle.addEventListener('mousedown', this.startDragging.bind(this));
+        this.handle.addEventListener('touchstart', this.startDragging.bind(this));
         
         document.addEventListener('mousemove', this.handleDrag.bind(this));
         document.addEventListener('touchmove', this.handleDrag.bind(this));
@@ -93,11 +84,13 @@ class MeditationApp {
         document.addEventListener('mouseup', this.stopDragging.bind(this));
         document.addEventListener('touchend', this.stopDragging.bind(this));
 
-        // Обработка выбора звука
+        // Обработка звуков
         this.soundOptions.forEach(option => {
             option.addEventListener('click', () => {
-                const sound = option.dataset.sound;
-                this.changeSound(sound);
+                if (!this.isActive) {
+                    const sound = option.dataset.sound;
+                    this.changeSound(sound);
+                }
             });
         });
 
@@ -122,7 +115,7 @@ class MeditationApp {
         if (this.isDragging && !this.isActive) {
             e.preventDefault();
             
-            const rect = this.timerRing.getBoundingClientRect();
+            const rect = this.timer.getBoundingClientRect();
             const center = {
                 x: rect.left + rect.width / 2,
                 y: rect.top + rect.height / 2
@@ -131,16 +124,13 @@ class MeditationApp {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            // Вычисляем угол
             let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
-            angle = (angle + 90 + 360) % 360; // Корректируем угол
+            angle = (angle + 90 + 360) % 360;
 
-            // Обновляем длительность
             this.duration = Math.round((angle / 360) * this.maxDuration);
             if (this.duration < 1) this.duration = 1;
             if (this.duration > this.maxDuration) this.duration = this.maxDuration;
 
-            // Обновляем UI
             this.updateUI(angle);
         }
     }
@@ -150,23 +140,28 @@ class MeditationApp {
     }
 
     updateUI(angle) {
-        // Обновляем отображение времени
+        // Обновляем время
         this.timeDisplay.textContent = this.duration;
 
         // Обновляем кольцо прогресса
-        const progress = angle / 360;
-        const circumference = 283; // 2 * π * 45 (радиус)
-        const offset = circumference - (progress * circumference);
-        document.querySelector('.ring-foreground').style.strokeDashoffset = offset;
+        const circumference = 283;
+        const offset = circumference - ((angle / 360) * circumference);
+        this.ringProgress.style.strokeDashoffset = offset;
 
-        // Обновляем положение маркера
-        this.dragHandle.style.transform = `rotate(${angle}deg)`;
+        // Обновляем маркер
+        this.handle.style.transform = `rotate(${angle}deg)`;
+
+        // Обновляем активный звук
+        this.soundOptions.forEach(option => {
+            option.classList.toggle('active', option.dataset.sound === this.currentSound);
+        });
     }
 
     startMeditation() {
         this.isActive = true;
         this.startButton.textContent = 'Остановить';
         this.remainingTime = this.duration * 60;
+        this.playSound();
 
         this.timer = setInterval(() => {
             this.remainingTime--;
@@ -175,22 +170,14 @@ class MeditationApp {
             const seconds = this.remainingTime % 60;
             this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-            // Обновляем прогресс
             const progress = this.remainingTime / (this.duration * 60);
-            const circumference = 283;
-            const offset = circumference - (progress * circumference);
-            document.querySelector('.ring-foreground').style.strokeDashoffset = offset;
-
-            // Обновляем маркер
             const angle = progress * 360;
-            this.dragHandle.style.transform = `rotate(${angle}deg)`;
+            this.updateUI(angle);
 
             if (this.remainingTime <= 0) {
                 this.completeMeditation();
             }
         }, 1000);
-
-        this.playSound();
     }
 
     stopMeditation() {
@@ -198,7 +185,7 @@ class MeditationApp {
         this.startButton.textContent = 'Начать медитацию';
         clearInterval(this.timer);
         this.stopSound();
-        this.updateUI();
+        this.updateUI(0);
     }
 
     completeMeditation() {
@@ -220,15 +207,13 @@ class MeditationApp {
         if (this.isActive) {
             this.playSound();
         }
-        this.updateUI();
+        this.updateUI(0);
     }
 
     playSound() {
         if (this.currentSound !== 'silence' && this.sounds[this.currentSound]) {
             this.sounds[this.currentSound].loop = true;
-            this.sounds[this.currentSound].play().catch(() => {
-                console.log('Ошибка воспроизведения звука');
-            });
+            this.sounds[this.currentSound].play().catch(console.error);
         }
     }
 
