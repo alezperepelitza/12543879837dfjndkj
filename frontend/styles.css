@@ -53,10 +53,10 @@ circle {
     height: 40px;
     background: var(--primary);
     border-radius: 50%;
-    top: -20px;
+    top: 0;
     left: 50%;
-    transform-origin: center 160px;
-    transform: translateX(-50%);
+    transform-origin: center 140px;
+    transform: translate(-50%, -50%);
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(91, 127, 255, 0.5);
 }
@@ -706,7 +706,7 @@ button:active {
 /* Стили для техник дыхания */
 .breathing-text {
     position: absolute;
-    top: 120px;
+    top: -60px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 24px;

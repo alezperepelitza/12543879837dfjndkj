@@ -9,9 +9,16 @@ class MeditationApp {
         this.isDragging = false;
         this.currentSound = 'silence';
         this.sounds = {
-            rain: new Audio('https://raw.githubusercontent.com/your-username/your-repo/main/frontend/sounds/rain.mp3'),
-            forest: new Audio('https://raw.githubusercontent.com/your-username/your-repo/main/frontend/sounds/forest.mp3'),
-            ocean: new Audio('https://raw.githubusercontent.com/your-username/your-repo/main/frontend/sounds/ocean.mp3')
+            rain: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/ambient/rain.mp3'),
+            forest: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/ambient/forest.mp3'),
+            ocean: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/ambient/ocean.mp3')
+        };
+        
+        // Добавляем звуки для дыхательных техник
+        this.breathingSounds = {
+            inhale: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/effects/inhale.mp3'),
+            exhale: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/effects/exhale.mp3'),
+            hold: new Audio('https://raw.githubusercontent.com/AlexGyver/SoundLibrary/main/effects/hold.mp3')
         };
         
         // Загружаем статистику
@@ -59,13 +66,26 @@ class MeditationApp {
         this.startAngle = -90;
         this.currentAngle = 0;
 
-        // Предзагрузка звуков с обработкой ошибок
-        Object.values(this.sounds).forEach(sound => {
+        // Предзагрузка всех звуков с обработкой ошибок
+        [...Object.values(this.sounds), ...Object.values(this.breathingSounds)].forEach(sound => {
             sound.load();
-            sound.loop = true;
-            // Добавляем обработчик ошибок загрузки
+            
+            // Устанавливаем громкость
+            sound.volume = 0.7;
+            
+            // Зацикливаем только фоновые звуки
+            if (Object.values(this.sounds).includes(sound)) {
+                sound.loop = true;
+            }
+
+            // Обработка ошибок загрузки
             sound.onerror = () => {
                 console.error('Ошибка загрузки звука:', sound.src);
+                tg.showPopup({
+                    title: 'Ошибка загрузки',
+                    message: 'Не удалось загрузить звуковой файл. Проверьте подключение к интернету.',
+                    buttons: [{type: 'ok'}]
+                });
             };
         });
 
@@ -277,24 +297,34 @@ class MeditationApp {
         this.startAngle = (this.duration / this.maxDuration) * 360;
         this.playSound();
 
-        this.timer = setInterval(() => {
-            this.remainingTime--;
-            
-            // Вычисляем угол для плавного движения маркера
-            const progress = this.remainingTime / (this.duration * 60);
-            const angle = this.startAngle * progress;
-            
-            // Обновляем UI с флагом обратного отсчета
-            this.updateUI(angle, true);
+        // Запускаем таймер
+        this.startTimer();
+    }
 
-            if (this.remainingTime <= 0) {
-                this.completeMeditation();
+    startTimer() {
+        if (this.timer) {
+            clearInterval(this.timer);
+        }
+
+        this.timer = setInterval(() => {
+            if (!this.isPaused) {
+                this.remainingTime--;
+                
+                const progress = this.remainingTime / (this.duration * 60);
+                const angle = this.startAngle * progress;
+                
+                this.updateUI(angle, true);
+
+                if (this.remainingTime <= 0) {
+                    this.completeMeditation();
+                }
             }
         }, 1000);
     }
 
     stopMeditation() {
         this.isActive = false;
+        this.isPaused = false; // Сбрасываем состояние паузы
         
         // Анимируем возврат кнопок
         document.querySelector('.meditation-controls').classList.remove('visible');
@@ -304,6 +334,7 @@ class MeditationApp {
         }, 300);
 
         clearInterval(this.timer);
+        this.timer = null;
         this.stopSound();
         this.updateUI(0);
         this.stopBreathingTechnique();
@@ -346,19 +377,31 @@ class MeditationApp {
     playSound() {
         if (this.currentSound !== 'silence' && this.sounds[this.currentSound]) {
             const sound = this.sounds[this.currentSound];
+            
             // Пробуем воспроизвести звук после взаимодействия пользователя
             const playPromise = sound.play();
             
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
                     console.error('Ошибка воспроизведения звука:', error);
+                    
                     if (error.name === 'NotAllowedError') {
-                        // Показываем уведомление только при ошибке разрешения
+                        // Запрашиваем разрешение на воспроизведение
                         tg.showPopup({
                             title: 'Требуется разрешение',
-                            message: 'Для воспроизведения звука необходимо разрешение. Нажмите OK и разрешите воспроизведение.',
-                            buttons: [{type: 'ok'}]
+                            message: 'Для воспроизведения звука необходимо взаимодействие. Нажмите на любой элемент страницы.',
+                            buttons: [{
+                                type: 'ok',
+                                text: 'Понятно'
+                            }]
                         });
+                        
+                        // Добавляем обработчик для первого взаимодействия
+                        const unlockAudio = () => {
+                            sound.play().catch(console.error);
+                            document.removeEventListener('click', unlockAudio);
+                        };
+                        document.addEventListener('click', unlockAudio);
                     }
                 });
             }
@@ -479,10 +522,8 @@ class MeditationApp {
         this.pauseButton.textContent = this.isPaused ? 'Продолжить' : 'Пауза';
         
         if (this.isPaused) {
-            clearInterval(this.timer);
             this.stopSound();
         } else {
-            this.startTimer();
             this.playSound();
         }
     }
@@ -496,23 +537,52 @@ class MeditationApp {
         let stepIndex = 0;
         let timeLeft = technique.sequence[0].duration;
 
-        // Показываем начальное состояние
-        this.breathingText.textContent = `${technique.sequence[0].action} (${timeLeft})`;
+        // Показываем начальное состояние и проигрываем звук
+        const firstStep = technique.sequence[0];
+        this.breathingText.textContent = `${firstStep.action} (${timeLeft})`;
         this.breathingText.classList.add('visible');
+        this.playBreathingSound(firstStep.action);
 
         this.breathingInterval = setInterval(() => {
-            if (this.isPaused) return;
+            if (!this.isPaused) {
+                timeLeft--;
 
-            timeLeft--;
+                if (timeLeft < 0) {
+                    stepIndex = (stepIndex + 1) % technique.sequence.length;
+                    timeLeft = technique.sequence[stepIndex].duration;
+                    
+                    // Проигрываем звук при смене фазы
+                    const step = technique.sequence[stepIndex];
+                    this.playBreathingSound(step.action);
+                }
 
-            if (timeLeft < 0) {
-                stepIndex = (stepIndex + 1) % technique.sequence.length;
-                timeLeft = technique.sequence[stepIndex].duration;
+                const step = technique.sequence[stepIndex];
+                this.breathingText.textContent = `${step.action} (${timeLeft})`;
             }
-
-            const step = technique.sequence[stepIndex];
-            this.breathingText.textContent = `${step.action} (${timeLeft})`;
         }, 1000);
+
+        this.currentBreathingTechnique = techniqueId;
+    }
+
+    playBreathingSound(action) {
+        // Останавливаем все звуки дыхания
+        Object.values(this.breathingSounds).forEach(sound => {
+            sound.pause();
+            sound.currentTime = 0;
+        });
+
+        // Проигрываем нужный звук
+        switch(action.toLowerCase()) {
+            case 'вдох':
+                this.breathingSounds.inhale.play().catch(console.error);
+                break;
+            case 'выдох':
+                this.breathingSounds.exhale.play().catch(console.error);
+                break;
+            case 'задержка':
+                this.breathingSounds.hold.play().catch(console.error);
+                break;
+        }
     }
 
     stopBreathingTechnique() {
@@ -521,6 +591,12 @@ class MeditationApp {
             this.breathingInterval = null;
         }
         this.breathingText.classList.remove('visible');
+        
+        // Останавливаем все звуки дыхания
+        Object.values(this.breathingSounds).forEach(sound => {
+            sound.pause();
+            sound.currentTime = 0;
+        });
     }
 }
 
