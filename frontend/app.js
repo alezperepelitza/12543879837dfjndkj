@@ -157,19 +157,37 @@ class MeditationApp {
 
         // Обработка техник дыхания
         this.breathingButton.addEventListener('click', () => {
-            this.breathingModal.classList.remove('hidden');
+            this.breathingModal.classList.add('visible');
         });
 
+        // Закрытие модального окна по клику на фон
+        this.breathingModal.addEventListener('click', (e) => {
+            if (e.target === this.breathingModal) {
+                this.breathingModal.classList.remove('visible');
+            }
+        });
+
+        // Закрытие по кнопке
         document.querySelector('.close-modal').addEventListener('click', () => {
-            this.breathingModal.classList.add('hidden');
+            this.breathingModal.classList.remove('visible');
         });
 
+        // Выбор техники дыхания
         document.querySelectorAll('.breathing-list button').forEach(button => {
             button.addEventListener('click', () => {
                 const technique = button.dataset.technique;
                 this.startBreathingTechnique(technique);
-                this.breathingModal.classList.add('hidden');
+                this.breathingModal.classList.remove('visible');
+                
+                // Визуальная обратная связь
+                button.classList.add('active');
+                setTimeout(() => button.classList.remove('active'), 200);
             });
+        });
+
+        // Добавляем обработчик для кнопки сброса
+        document.querySelector('.reset').addEventListener('click', () => {
+            this.stopMeditation();
         });
     }
 
@@ -206,7 +224,7 @@ class MeditationApp {
             if (this.duration < 1) this.duration = 1;
             if (this.duration > this.maxDuration) this.duration = this.maxDuration;
 
-            this.updateUI(angle);
+            this.updateUI(angle, true);
         }
     }
 
@@ -244,14 +262,20 @@ class MeditationApp {
 
     startMeditation() {
         this.isActive = true;
-        this.startButton.textContent = 'Остановить';
+        
+        // Анимируем смену кнопок
+        this.startButton.classList.add('hiding');
+        setTimeout(() => {
+            this.startButton.classList.add('hidden');
+            document.querySelector('.meditation-controls').classList.remove('hidden');
+            setTimeout(() => {
+                document.querySelector('.meditation-controls').classList.add('visible');
+            }, 50);
+        }, 300);
+
         this.remainingTime = this.duration * 60;
-        
-        // Сохраняем начальный угол
         this.startAngle = (this.duration / this.maxDuration) * 360;
-        
         this.playSound();
-        this.pauseButton.classList.remove('hidden');
 
         this.timer = setInterval(() => {
             this.remainingTime--;
@@ -271,11 +295,17 @@ class MeditationApp {
 
     stopMeditation() {
         this.isActive = false;
-        this.startButton.textContent = 'Начать медитацию';
+        
+        // Анимируем возврат кнопок
+        document.querySelector('.meditation-controls').classList.remove('visible');
+        setTimeout(() => {
+            document.querySelector('.meditation-controls').classList.add('hidden');
+            this.startButton.classList.remove('hidden', 'hiding');
+        }, 300);
+
         clearInterval(this.timer);
         this.stopSound();
         this.updateUI(0);
-        this.pauseButton.classList.add('hidden');
         this.stopBreathingTechnique();
     }
 
@@ -466,12 +496,12 @@ class MeditationApp {
         let stepIndex = 0;
         let timeLeft = technique.sequence[0].duration;
 
+        // Показываем начальное состояние
+        this.breathingText.textContent = `${technique.sequence[0].action} (${timeLeft})`;
+        this.breathingText.classList.add('visible');
+
         this.breathingInterval = setInterval(() => {
             if (this.isPaused) return;
-
-            const step = technique.sequence[stepIndex];
-            this.breathingText.textContent = `${step.action} (${timeLeft})`;
-            this.breathingText.classList.add('visible');
 
             timeLeft--;
 
@@ -479,6 +509,9 @@ class MeditationApp {
                 stepIndex = (stepIndex + 1) % technique.sequence.length;
                 timeLeft = technique.sequence[stepIndex].duration;
             }
+
+            const step = technique.sequence[stepIndex];
+            this.breathingText.textContent = `${step.action} (${timeLeft})`;
         }, 1000);
     }
 

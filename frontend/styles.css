@@ -727,10 +727,14 @@ button:active {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.8);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+}
+
+.breathing-modal.visible {
+    display: flex;
 }
 
 .modal-content {
@@ -739,33 +743,122 @@ button:active {
     border-radius: 12px;
     width: 90%;
     max-width: 400px;
+    position: relative;
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
 }
 
 .breathing-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin: 20px 0;
+    gap: 15px;
+    margin: 30px 0;
 }
 
 .breathing-list button {
-    padding: 15px;
+    padding: 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.1);
     color: var(--text);
     cursor: pointer;
     transition: all 0.3s;
+    font-size: 16px;
+    text-align: left;
 }
 
 .breathing-list button:hover {
     background: var(--primary);
+    transform: translateX(5px);
 }
 
 /* Стили для кнопок управления */
 .control-buttons {
     display: flex;
-    gap: 10px;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
     margin: 20px 0;
+}
+
+.breathing-techniques-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    opacity: 0.9;
+}
+
+.breathing-techniques-btn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.main-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.meditation-controls {
+    display: flex;
+    gap: 15px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+}
+
+.meditation-controls.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pause, .reset {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.pause:hover, .reset:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Анимация исчезновения кнопки старта */
+@keyframes fadeOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+.start.hiding {
+    animation: fadeOutUp 0.3s forwards;
 } 

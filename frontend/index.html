@@ -48,20 +48,23 @@
         <!-- Кнопки управления -->
         <div class="control-buttons">
             <button class="breathing-techniques-btn">Техники дыхания</button>
-            <button class="start">Начать медитацию</button>
-            <button class="pause hidden">Пауза</button>
+            <button class="start main-button">Начать медитацию</button>
+            <div class="meditation-controls hidden">
+                <button class="pause">Пауза</button>
+                <button class="reset">Сброс</button>
+            </div>
         </div>
         
         <!-- Модальное окно с техниками дыхания -->
         <div class="breathing-modal hidden">
             <div class="modal-content">
                 <h3>Выберите технику дыхания</h3>
+                <button class="close-modal">✕</button>
                 <div class="breathing-list">
                     <button data-technique="4-4-4-4">Квадратное дыхание (4-4-4-4)</button>
                     <button data-technique="4-7-8">Техника 4-7-8</button>
                     <button data-technique="box">Коробочное дыхание</button>
                 </div>
-                <button class="close-modal">Закрыть</button>
             </div>
         </div>
     </div>
