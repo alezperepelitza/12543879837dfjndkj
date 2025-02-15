@@ -3,102 +3,93 @@ tg.expand();
 
 class MeditationApp {
     constructor() {
-        this.selectedDuration = 5;
-        this.maxDuration = 60; // максимум 60 минут
-        this.isDragging = false;
-        this.startAngle = -90; // начинаем с верхней точки
-        this.selectedSound = 'silence';
+        this.duration = 20; // начальная длительность в минутах
+        this.maxDuration = 60;
         this.isActive = false;
-        this.timer = null;
-        this.progress = 0;
-        this.audio = null;
+        this.isDragging = false;
+        this.currentSound = 'silence';
         this.sounds = {
-            'rain': { url: 'sounds/rain.mp3', volume: 0.5 },
-            'forest': { url: 'sounds/forest.mp3', volume: 0.5 },
-            'ocean': { url: 'sounds/ocean.mp3', volume: 0.5 },
-            'silence': null
+            rain: new Audio('sounds/rain.mp3'),
+            forest: new Audio('sounds/forest.mp3'),
+            ocean: new Audio('sounds/ocean.mp3')
         };
         
-        this.activeSound = null;
-        this.activeAmbient = null;
-        this.activeBackground = null;
-        this.volume = 0.5;
+        // Загружаем статистику
+        this.stats = this.loadStats();
         
+        // Достижения
         this.achievements = {
-            'first_meditation': { title: 'Первая медитация', icon: '🎯' },
-            'week_streak': { title: '7 дней подряд', icon: '🔥' },
-            'hour_total': { title: 'Час медитации', icon: '⭐' }
-            // ... другие достижения
-        };
-        
-        // Добавляем техники дыхания
-        this.breathingTechniques = {
-            '4-4-4-4': {
-                name: 'Квадратное дыхание',
-                sequence: [
-                    { action: 'Вдох', duration: 4 },
-                    { action: 'Задержка', duration: 4 },
-                    { action: 'Выдох', duration: 4 },
-                    { action: 'Задержка', duration: 4 }
-                ]
+            first_session: {
+                id: 'first_session',
+                title: 'Первый шаг',
+                description: 'Завершите первую медитацию',
+                icon: '🎯',
+                unlocked: false
             },
-            '4-7-8': {
-                name: 'Техника 4-7-8',
-                sequence: [
-                    { action: 'Вдох', duration: 4 },
-                    { action: 'Задержка', duration: 7 },
-                    { action: 'Выдох', duration: 8 }
-                ]
+            daily_streak_7: {
+                id: 'daily_streak_7',
+                title: 'Неделя практики',
+                description: '7 дней подряд',
+                icon: '🔥',
+                unlocked: false
+            },
+            total_hours_10: {
+                id: 'total_hours_10',
+                title: 'Путь к просветлению',
+                description: '10 часов медитации',
+                icon: '⭐',
+                unlocked: false
+            },
+            morning_person: {
+                id: 'morning_person',
+                title: 'Ранняя птичка',
+                description: '5 медитаций до 8 утра',
+                icon: '🌅',
+                unlocked: false
+            },
+            night_owl: {
+                id: 'night_owl',
+                title: 'Ночная сова',
+                description: '5 медитаций после 22:00',
+                icon: '🌙',
+                unlocked: false
             }
         };
-        
-        this.quotes = [
-            { text: "Дыши и отпускай", author: "Будда" },
-            { text: "Настоящее — единственное время, которое имеет значение", author: "Тич Нат Хан" },
-            { text: "В тишине рождается мудрость", author: "Конфуций" },
-            // Добавьте больше цитат
-        ];
-        
-        this.showRandomQuote();
-        
+
         this.initializeElements();
         this.initializeEventListeners();
-        this.loadUserData();
-        this.initializeReminders();
-        this.initializeBreathing();
-        this.initializeTabs();
-        this.initializeSoundControls();
-        this.initializeCircleSelector();
-        this.uiSounds = {
-            tick: new Audio('sounds/ui/tick.mp3'),
-            complete: new Audio('sounds/ui/complete.mp3'),
-            achievement: new Audio('sounds/ui/achievement.mp3')
-        };
+        this.updateUI();
     }
-    
+
     initializeElements() {
+        this.timerRing = document.querySelector('.timer-ring');
+        this.dragHandle = document.querySelector('.drag-handle');
         this.timeDisplay = document.querySelector('.time');
-        this.progressCircle = document.querySelector('.progress-circle');
-        this.startButton = document.querySelector('.start-btn');
-        this.durationButtons = document.querySelectorAll('.duration-selector button');
-        this.soundButtons = document.querySelectorAll('.sound-selector button');
+        this.startButton = document.querySelector('.start-button');
+        this.soundOptions = document.querySelectorAll('.sound-option');
+        this.ringProgress = document.querySelector('.ring-progress');
     }
-    
+
     initializeEventListeners() {
-        this.durationButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                this.selectedDuration = parseInt(button.dataset.time);
-                this.updateUI();
+        // Обработка перетаскивания
+        this.dragHandle.addEventListener('mousedown', this.startDragging.bind(this));
+        this.dragHandle.addEventListener('touchstart', this.startDragging.bind(this));
+        
+        document.addEventListener('mousemove', this.handleDrag.bind(this));
+        document.addEventListener('touchmove', this.handleDrag.bind(this));
+        
+        document.addEventListener('mouseup', this.stopDragging.bind(this));
+        document.addEventListener('touchend', this.stopDragging.bind(this));
+
+        // Обработка выбора звука
+        this.soundOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const sound = option.dataset.sound;
+                this.changeSound(sound);
             });
         });
-        
-        this.soundButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                this.selectedSound = button.dataset.sound;
-                this.updateUI();
-            });
-        });
-        
+
+        // Обработка старта/остановки
         this.startButton.addEventListener('click', () => {
             if (this.isActive) {
                 this.stopMeditation();
@@ -107,470 +98,228 @@ class MeditationApp {
             }
         });
     }
-    
-    initializeSoundControls() {
-        // Инициализация регулятора громкости
-        const volumeControl = document.querySelector('.volume-control input');
-        volumeControl.addEventListener('input', (e) => {
-            this.setVolume(e.target.value / 100);
+
+    startDragging(e) {
+        if (!this.isActive) {
+            this.isDragging = true;
+            e.preventDefault();
+        }
+    }
+
+    handleDrag(e) {
+        if (this.isDragging && !this.isActive) {
+            const rect = this.timerRing.getBoundingClientRect();
+            const center = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const angle = Math.atan2(clientY - center.y, clientX - center.x);
+            let degrees = angle * (180 / Math.PI) + 90;
+            if (degrees < 0) degrees += 360;
+
+            this.duration = Math.round((degrees / 360) * this.maxDuration);
+            if (this.duration < 1) this.duration = 1;
+            if (this.duration > this.maxDuration) this.duration = this.maxDuration;
+
+            this.updateUI();
+        }
+    }
+
+    stopDragging() {
+        this.isDragging = false;
+    }
+
+    updateUI() {
+        // Обновляем отображение времени
+        this.timeDisplay.textContent = this.duration;
+
+        // Обновляем положение маркера и прогресс
+        const degrees = (this.duration / this.maxDuration) * 360;
+        this.ringProgress.style.transform = `rotate(${degrees}deg)`;
+        
+        // Обновляем активный звук
+        this.soundOptions.forEach(option => {
+            option.classList.toggle('active', option.dataset.sound === this.currentSound);
         });
-        
-        // Предзагрузка звуков
-        this.preloadSounds();
     }
-    
-    preloadSounds() {
-        // Создаем скрытые аудио элементы для каждого звука
-        for (const type in this.sounds) {
-            for (const sound in this.sounds[type]) {
-                if (this.sounds[type][sound]) {
-                    const audio = new Audio();
-                    audio.src = this.sounds[type][sound].url;
-                    audio.preload = 'auto';
-                    this.sounds[type][sound].audio = audio;
-                }
-            }
-        }
-    }
-    
-    setVolume(value) {
-        this.volume = value;
-        
-        // Обновляем громкость активных звуков
-        if (this.activeAmbient) {
-            this.activeAmbient.volume = value * this.sounds.ambient[this.selectedSound].volume;
-        }
-        if (this.activeBackground) {
-            this.activeBackground.volume = value * this.sounds.background.meditation1.volume;
-        }
-    }
-    
+
     startMeditation() {
         this.isActive = true;
-        this.progress = 0;
         this.startButton.textContent = 'Остановить';
-        
-        const duration = this.selectedDuration * 60;
-        let timeLeft = duration;
-        
+        this.remainingTime = this.duration * 60;
+
+        // Запускаем таймер
         this.timer = setInterval(() => {
-            timeLeft--;
-            this.progress = (duration - timeLeft) / duration * 100;
+            this.remainingTime--;
             
-            this.updateUI();
-            
-            if (timeLeft <= 0) {
+            // Обновляем отображение времени
+            const minutes = Math.floor(this.remainingTime / 60);
+            const seconds = this.remainingTime % 60;
+            this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            // Обновляем прогресс
+            const progress = (this.remainingTime / (this.duration * 60)) * 360;
+            this.ringProgress.style.transform = `rotate(${progress}deg)`;
+
+            if (this.remainingTime <= 0) {
                 this.completeMeditation();
             }
         }, 1000);
-        
-        // Запускаем звуки
-        this.startSounds();
+
+        // Запускаем выбранный звук
+        this.playSound();
     }
-    
-    startSounds() {
-        this.stopSounds();
-        
-        if (this.selectedSound !== 'silence') {
-            try {
-                const sound = this.sounds[this.selectedSound];
-                this.activeSound = new Audio(sound.url);
-                this.activeSound.loop = true;
-                this.activeSound.volume = sound.volume;
-                
-                const playPromise = this.activeSound.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log('Ошибка воспроизведения:', error);
-                        tg.showPopup({
-                            title: 'Внимание',
-                            message: 'Не удалось воспроизвести звук. Попробуйте еще раз.',
-                            buttons: [{type: 'ok'}]
-                        });
-                    });
-                }
-            } catch (error) {
-                console.log('Ошибка инициализации звука:', error);
-            }
-        }
-    }
-    
-    stopSounds() {
-        if (this.activeAmbient) {
-            this.activeAmbient.pause();
-            this.activeAmbient = null;
-        }
-        if (this.activeBackground) {
-            this.activeBackground.pause();
-            this.activeBackground = null;
-        }
-    }
-    
+
     stopMeditation() {
         this.isActive = false;
-        clearInterval(this.timer);
         this.startButton.textContent = 'Начать медитацию';
-        this.progress = 0;
+        clearInterval(this.timer);
+        this.stopSound();
         this.updateUI();
-        
-        // Останавливаем звуки
-        this.stopSounds();
     }
-    
+
     completeMeditation() {
         this.stopMeditation();
         this.updateStats();
+        this.checkAchievements();
+        
+        // Показываем уведомление
         tg.showPopup({
             title: 'Медитация завершена',
-            message: `Поздравляем! Вы завершили ${this.selectedDuration}-минутную медитацию.`,
+            message: `Отличная работа! Вы медитировали ${this.duration} минут.`,
             buttons: [{type: 'ok'}]
         });
     }
-    
-    updateUI() {
-        // Обновляем отображение времени с анимацией
-        const minutes = Math.floor(this.selectedDuration);
-        const timeDisplay = document.querySelector('.time');
-        
-        // Анимируем изменение числа
-        const currentValue = parseInt(timeDisplay.textContent);
-        const diff = minutes - currentValue;
-        
-        if (diff !== 0) {
-            const step = diff > 0 ? 1 : -1;
-            let current = currentValue;
-            
-            const animate = () => {
-                current += step;
-                timeDisplay.textContent = String(current).padStart(2, '0');
-                
-                if ((step > 0 && current < minutes) || (step < 0 && current > minutes)) {
-                    requestAnimationFrame(animate);
-                }
-            };
-            
-            requestAnimationFrame(animate);
+
+    changeSound(sound) {
+        this.stopSound();
+        this.currentSound = sound;
+        if (this.isActive) {
+            this.playSound();
+        }
+        this.updateUI();
+    }
+
+    playSound() {
+        if (this.currentSound !== 'silence' && this.sounds[this.currentSound]) {
+            this.sounds[this.currentSound].loop = true;
+            this.sounds[this.currentSound].play().catch(() => {
+                console.log('Ошибка воспроизведения звука');
+            });
         }
     }
-    
-    loadUserData() {
-        // Здесь можно добавить загрузку данных пользователя из localStorage или с сервера
+
+    stopSound() {
+        Object.values(this.sounds).forEach(sound => {
+            sound.pause();
+            sound.currentTime = 0;
+        });
     }
-    
+
     updateStats() {
-        // Здесь можно добавить сохранение статистики в localStorage или на сервер
-    }
-
-    initializeReminders() {
-        // Проверяем разрешения на уведомления
-        if ('Notification' in window) {
-            Notification.requestPermission();
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Обновляем статистику
+        this.stats.totalMinutes += this.duration;
+        this.stats.lastMeditation = today;
+        
+        if (!this.stats.meditationDays.includes(today)) {
+            this.stats.meditationDays.push(today);
         }
+
+        // Считаем дни подряд
+        this.stats.streak = this.calculateStreak();
+        
+        // Сохраняем статистику
+        this.saveStats();
+        
+        // Обновляем отображение
+        document.querySelectorAll('.stat-value')[0].textContent = this.stats.streak;
+        document.querySelectorAll('.stat-value')[1].textContent = this.stats.totalMinutes;
     }
 
-    setDailyReminder(hour, minute) {
-        const now = new Date();
-        const reminderTime = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-            hour,
-            minute
-        );
+    calculateStreak() {
+        const today = new Date();
+        let streak = 0;
+        let currentDate = today;
 
-        // Сохраняем в localStorage
-        localStorage.setItem('meditation_reminder', JSON.stringify({
-            hour,
-            minute,
-            enabled: true
-        }));
+        while (this.stats.meditationDays.includes(currentDate.toISOString().split('T')[0])) {
+            streak++;
+            currentDate.setDate(currentDate.getDate() - 1);
+        }
 
-        // Отправляем на сервер для push-уведомлений
-        this.saveReminderToServer(hour, minute);
+        return streak;
     }
 
     checkAchievements() {
-        const stats = this.loadUserStats();
-        
-        // Проверяем первую медитацию
-        if (stats.totalSessions === 1) {
-            this.unlockAchievement('first_meditation');
+        // Проверяем каждое достижение
+        if (!this.achievements.first_session.unlocked) {
+            this.unlockAchievement('first_session');
         }
-        
-        // Проверяем серию из 7 дней
-        if (this.checkStreak(7)) {
-            this.unlockAchievement('week_streak');
+
+        if (this.stats.streak >= 7 && !this.achievements.daily_streak_7.unlocked) {
+            this.unlockAchievement('daily_streak_7');
         }
-        
-        // Проверяем общее время
-        if (stats.totalMinutes >= 60 && !stats.achievements.includes('hour_total')) {
-            this.unlockAchievement('hour_total');
+
+        if (this.stats.totalMinutes >= 600 && !this.achievements.total_hours_10.unlocked) {
+            this.unlockAchievement('total_hours_10');
         }
-    }
 
-    unlockAchievement(achievementId) {
-        const achievement = this.achievements[achievementId];
-        
-        // Создаем красивую анимацию достижения
-        const overlay = document.createElement('div');
-        overlay.className = 'achievement-overlay';
-        overlay.innerHTML = `
-            <div class="achievement-popup">
-                <div class="achievement-icon">${achievement.icon}</div>
-                <div class="achievement-info">
-                    <h3>Новое достижение!</h3>
-                    <p>${achievement.title}</p>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(overlay);
-        setTimeout(() => overlay.remove(), 3000);
-    }
-
-    initializeBreathing() {
-        // ... implementation of initializeBreathing method
-    }
-
-    initializeTabs() {
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const tabId = button.dataset.tab;
-                this.switchTab(tabId);
-            });
-        });
-    }
-    
-    switchTab(tabId) {
-        // Убираем активный класс у всех вкладок
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.querySelectorAll('.tab-pane').forEach(pane => {
-            pane.classList.remove('active');
-        });
-        
-        // Активируем нужную вкладку
-        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-        document.getElementById(tabId).classList.add('active');
-    }
-    
-    startBreathingExercise(technique) {
-        const sequence = this.breathingTechniques[technique].sequence;
-        let currentStep = 0;
-        
-        const runSequence = () => {
-            if (currentStep >= sequence.length) {
-                currentStep = 0;
+        const hour = new Date().getHours();
+        if (hour < 8) {
+            this.stats.morningMeditations = (this.stats.morningMeditations || 0) + 1;
+            if (this.stats.morningMeditations >= 5 && !this.achievements.morning_person.unlocked) {
+                this.unlockAchievement('morning_person');
             }
-            
-            const step = sequence[currentStep];
-            this.updateBreathingUI(step.action, step.duration);
-            
-            setTimeout(() => {
-                currentStep++;
-                runSequence();
-            }, step.duration * 1000);
-        };
-        
-        runSequence();
-    }
-    
-    updateBreathingUI(action, duration) {
-        const text = document.querySelector('.breathing-text');
-        const circle = document.querySelector('.breathing-circle');
-        
-        text.textContent = action;
-        
-        // Обновляем анимацию круга
-        circle.style.animation = 
-            action === 'Вдох' ? 'breathe-in 4s' :
-            action === 'Выдох' ? 'breathe-out 4s' :
-            'hold 4s';
-    }
-    
-    // Методы для работы с календарем
-    generateCalendar() {
-        const calendar = document.querySelector('.calendar-grid');
-        const today = new Date();
-        const stats = this.loadUserStats();
-        
-        // Генерируем сетку календаря
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            
-            const dayElement = document.createElement('div');
-            dayElement.className = 'calendar-day';
-            dayElement.classList.add(
-                stats.meditationDays.includes(date.toISOString().split('T')[0])
-                    ? 'has-meditation'
-                    : 'no-meditation'
-            );
-            
-            calendar.appendChild(dayElement);
+        }
+
+        if (hour >= 22) {
+            this.stats.nightMeditations = (this.stats.nightMeditations || 0) + 1;
+            if (this.stats.nightMeditations >= 5 && !this.achievements.night_owl.unlocked) {
+                this.unlockAchievement('night_owl');
+            }
         }
     }
-    
-    // Методы для работы с рейтингом
-    async updateLeaderboard() {
-        const leaderboard = document.querySelector('.leaderboard-list');
-        const leaders = await this.fetchLeaderboard();
-        
-        leaderboard.innerHTML = leaders.map((user, index) => `
-            <div class="leaderboard-item">
-                <span class="rank">${index + 1}</span>
-                <span class="name">${user.name}</span>
-                <span class="score">${user.totalMinutes} мин</span>
-            </div>
-        `).join('');
+
+    unlockAchievement(id) {
+        const achievement = this.achievements[id];
+        achievement.unlocked = true;
+
+        // Показываем уведомление
+        tg.showPopup({
+            title: 'Новое достижение!',
+            message: `${achievement.icon} ${achievement.title}\n${achievement.description}`,
+            buttons: [{type: 'ok'}]
+        });
+
+        // Сохраняем достижения
+        this.saveAchievements();
     }
 
-    // Добавляем обработку видимости страницы
-    initializeVisibilityHandler() {
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && this.activeAmbient) {
-                // Сохраняем состояние воспроизведения
-                this.wasPlaying = !this.activeAmbient.paused;
-                this.activeAmbient.pause();
-            } else if (!document.hidden && this.wasPlaying) {
-                // Возобновляем воспроизведение
-                this.activeAmbient.play().catch(() => {
-                    console.log('Не удалось возобновить воспроизведение');
-                });
-            }
-        });
-    }
-
-    initializeCircleSelector() {
-        const circle = document.querySelector('.progress-circle');
-        const marker = document.querySelector('.time-marker');
-        
-        // Обработка начала перетаскивания
-        marker.addEventListener('mousedown', (e) => {
-            this.isDragging = true;
-            document.addEventListener('mousemove', this.handleDrag);
-            document.addEventListener('mouseup', this.stopDrag);
-        });
-        
-        // Обработка касания для мобильных устройств
-        marker.addEventListener('touchstart', (e) => {
-            this.isDragging = true;
-            document.addEventListener('touchmove', this.handleDrag);
-            document.addEventListener('touchend', this.stopDrag);
-        });
-        
-        // Обработка клика по кругу
-        circle.addEventListener('click', (e) => {
-            if (!this.isActive) {
-                const rect = circle.getBoundingClientRect();
-                const x = e.clientX - (rect.left + rect.width / 2);
-                const y = e.clientY - (rect.top + rect.height / 2);
-                this.updateTimeFromPosition(x, y);
-            }
-        });
-    }
-    
-    handleDrag = (e) => {
-        if (this.isDragging && !this.isActive) {
-            const circle = document.querySelector('.progress-circle');
-            const rect = circle.getBoundingClientRect();
-            
-            // Получаем координаты касания или мыши
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            const x = clientX - (rect.left + rect.width / 2);
-            const y = clientY - (rect.top + rect.height / 2);
-            
-            this.updateTimeFromPosition(x, y);
-        }
-    }
-    
-    stopDrag = () => {
-        this.isDragging = false;
-        document.removeEventListener('mousemove', this.handleDrag);
-        document.removeEventListener('mouseup', this.stopDrag);
-        document.removeEventListener('touchmove', this.handleDrag);
-        document.removeEventListener('touchend', this.stopDrag);
-    }
-    
-    updateTimeFromPosition(x, y) {
-        // Вычисляем угол
-        let angle = Math.atan2(y, x) * 180 / Math.PI;
-        angle = (angle - this.startAngle + 360) % 360;
-        
-        // Конвертируем угол в минуты (0-360° = 0-60 минут)
-        this.selectedDuration = Math.round(angle / 6);
-        if (this.selectedDuration < 1) this.selectedDuration = 1;
-        if (this.selectedDuration > this.maxDuration) this.selectedDuration = this.maxDuration;
-        
-        // Обновляем UI с анимацией
-        this.updateUI();
-        this.updateMarkerPosition(angle);
-        
-        // Обновляем градиент
-        const gradient = document.querySelector('.circle-gradient');
-        const percentage = (this.selectedDuration / this.maxDuration) * 100;
-        gradient.style.background = `conic-gradient(
-            from -90deg,
-            var(--tg-theme-button-color) ${percentage}%,
-            transparent ${percentage}%
-        )`;
-    }
-    
-    updateMarkerPosition(angle) {
-        const marker = document.querySelector('.time-marker');
-        const radius = 125; // Половина ширины круга
-        
-        // Вычисляем позицию маркера
-        const radian = (angle + this.startAngle) * Math.PI / 180;
-        const x = Math.cos(radian) * radius;
-        const y = Math.sin(radian) * radius;
-        
-        // Обновляем позицию маркера
-        marker.style.transform = `translate(${x}px, ${y}px)`;
-    }
-
-    showRandomQuote() {
-        const quote = this.quotes[Math.floor(Math.random() * this.quotes.length)];
-        const quoteElement = document.createElement('div');
-        quoteElement.className = 'meditation-quote';
-        quoteElement.innerHTML = `
-            <p class="quote-text">${quote.text}</p>
-            <p class="quote-author">— ${quote.author}</p>
-        `;
-        
-        document.querySelector('.timer-display').appendChild(quoteElement);
-    }
-
-    createParticles() {
-        const container = document.querySelector('.particles');
-        
-        const createParticle = () => {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.width = Math.random() * 10 + 5 + 'px';
-            particle.style.height = particle.style.width;
-            particle.style.animation = `float ${Math.random() * 2 + 2}s ease-out`;
-            
-            container.appendChild(particle);
-            setTimeout(() => particle.remove(), 4000);
+    loadStats() {
+        const defaultStats = {
+            totalMinutes: 0,
+            streak: 0,
+            meditationDays: [],
+            lastMeditation: null,
+            morningMeditations: 0,
+            nightMeditations: 0
         };
 
-        if (this.isActive) {
-            createParticle();
-            setTimeout(() => this.createParticles(), Math.random() * 1000 + 500);
-        }
+        const saved = localStorage.getItem('meditation_stats');
+        return saved ? JSON.parse(saved) : defaultStats;
     }
 
-    playUISound(sound) {
-        if (this.uiSounds[sound]) {
-            this.uiSounds[sound].currentTime = 0;
-            this.uiSounds[sound].play().catch(() => {});
-        }
+    saveStats() {
+        localStorage.setItem('meditation_stats', JSON.stringify(this.stats));
+    }
+
+    saveAchievements() {
+        localStorage.setItem('meditation_achievements', JSON.stringify(this.achievements));
     }
 }
 
