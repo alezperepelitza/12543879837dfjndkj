@@ -126,7 +126,7 @@ class MeditationApp {
 
         this.initializeElements();
         this.initializeEventListeners();
-        this.updateUI(0);
+        this.updateUI(this.duration);
     }
 
     initializeElements() {
@@ -140,6 +140,9 @@ class MeditationApp {
         this.breathingButton = document.querySelector('.breathing-techniques-btn');
         this.breathingModal = document.querySelector('.breathing-modal');
         this.breathingText = document.querySelector('.breathing-text');
+        this.sliderHandle = document.querySelector('.slider-handle');
+        this.sliderTrack = document.querySelector('.slider-track');
+        this.sliderFill = document.querySelector('.slider-fill');
     }
 
     initializeEventListeners() {
@@ -222,35 +225,19 @@ class MeditationApp {
         if (this.isDragging && !this.isActive) {
             e.preventDefault();
             
-            const rect = this.timer.getBoundingClientRect();
-            const center = {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
-            };
-
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            // Вычисляем угол относительно центра
-            let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
-            // Корректируем угол для начала с 12 часов
-            angle = (angle + 90 + 360) % 360;
-
-            this.currentAngle = angle;
-            this.duration = Math.round((angle / 360) * this.maxDuration);
+            const rect = this.sliderTrack.getBoundingClientRect();
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
             
-            // Ограничиваем минимальное и максимальное значение
-            if (this.duration < 1) {
-                this.duration = 1;
-                angle = (1 / this.maxDuration) * 360;
-            }
-            if (this.duration > this.maxDuration) {
-                this.duration = this.maxDuration;
-                angle = 360;
-            }
-
-            // Обновляем UI с текущим углом
-            this.updateUI(angle);
+            // Вычисляем процент
+            let percent = (x - rect.left) / rect.width;
+            percent = Math.max(0, Math.min(1, percent));
+            
+            // Вычисляем длительность
+            this.duration = Math.round(percent * this.maxDuration);
+            if (this.duration < 1) this.duration = 1;
+            if (this.duration > this.maxDuration) this.duration = this.maxDuration;
+            
+            this.updateUI(this.duration);
         }
     }
 
@@ -258,23 +245,23 @@ class MeditationApp {
         this.isDragging = false;
     }
 
-    updateUI(angle, isCountdown = false) {
-        // Обновляем время
+    updateUI(duration) {
         if (!this.isActive) {
-            this.timeDisplay.textContent = this.duration;
+            this.timeDisplay.textContent = duration;
+            
+            // Обновляем положение слайдера
+            const percent = (duration / this.maxDuration) * 100;
+            this.sliderHandle.style.left = `${percent}%`;
+            this.sliderFill.style.width = `${percent}%`;
         } else {
             const minutes = Math.floor(this.remainingTime / 60);
             const seconds = this.remainingTime % 60;
             this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Обновляем прогресс
+            const percent = (this.remainingTime / (this.duration * 60)) * 100;
+            this.sliderFill.style.width = `${percent}%`;
         }
-
-        // Обновляем кольцо прогресса
-        const circumference = 283;
-        const offset = circumference - ((angle / 360) * circumference);
-        this.ringProgress.style.strokeDashoffset = offset;
-
-        // Обновляем маркер
-        this.handle.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
     }
 
     startMeditation() {
@@ -301,6 +288,8 @@ class MeditationApp {
         if (this.currentBreathingTechnique) {
             this.startBreathingTechnique(this.currentBreathingTechnique);
         }
+
+        this.sliderHandle.style.pointerEvents = 'none';
     }
 
     startTimer() {
@@ -315,7 +304,7 @@ class MeditationApp {
                 const progress = this.remainingTime / (this.duration * 60);
                 const angle = this.startAngle * progress;
                 
-                this.updateUI(angle, true);
+                this.updateUI(this.duration);
 
                 if (this.remainingTime <= 0) {
                     this.completeMeditation();
@@ -342,12 +331,13 @@ class MeditationApp {
         // Сбрасываем в начальное положение
         this.duration = 20; // Начальное значение
         this.currentAngle = 0;
-        this.updateUI(0);
+        this.updateUI(this.duration);
         this.stopBreathingTechnique();
         
         // Разрешаем перетаскивание
         this.isDragging = false;
         this.handle.style.pointerEvents = 'auto';
+        this.sliderHandle.style.pointerEvents = 'auto';
     }
 
     completeMeditation() {
