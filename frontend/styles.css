@@ -9,12 +9,14 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto;
+    overflow-x: hidden;
 }
 
 .app {
     max-width: 500px;
     margin: 0 auto;
     padding: 20px;
+    overflow-x: hidden;
 }
 
 /* Таймер */
@@ -109,12 +111,12 @@ circle {
     gap: 15px;
     margin: 20px auto;
     max-width: 400px;
-    padding: 0 20px;
+    padding: 0;
 }
 
 .sound-option {
     aspect-ratio: 1;
-    padding: 15px;
+    padding: 10px;
     border-radius: 12px;
     cursor: pointer;
     background: rgba(255, 255, 255, 0.05);
@@ -863,4 +865,23 @@ button:active {
 
 .start.hiding {
     animation: fadeOutUp 0.3s forwards;
+}
+
+/* Добавляем медиа-запрос для мобильных устройств */
+@media (max-width: 400px) {
+    .sounds {
+        gap: 10px;
+    }
+    
+    .sound-option {
+        padding: 8px;
+    }
+    
+    .sound-option .icon {
+        font-size: 20px;
+    }
+    
+    .sound-option .label {
+        font-size: 10px;
+    }
 } 

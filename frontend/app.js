@@ -231,10 +231,10 @@ class MeditationApp {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            // Вычисляем угол с учетом того, что таймер повернут на -90 градусов
+            // Вычисляем угол относительно центра
             let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
-            // Корректируем угол
-            angle = (angle + 360) % 360;
+            // Корректируем угол для начала с 12 часов
+            angle = (angle + 90 + 360) % 360;
 
             this.currentAngle = angle;
             this.duration = Math.round((angle / 360) * this.maxDuration);
