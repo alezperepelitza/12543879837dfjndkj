@@ -127,6 +127,7 @@ class MeditationApp {
         this.initializeElements();
         this.initializeEventListeners();
         this.updateUI(this.duration);
+        this.timeDisplay.classList.add('infinity');
     }
 
     initializeElements() {
@@ -234,13 +235,15 @@ class MeditationApp {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            // Вычисляем угол с учетом того, что 0 градусов - это 12 часов
+            // Вычисляем угол относительно центра
             let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
-            angle = (angle + 90 + 360) % 360; // +90 чтобы начало было сверху
+            // Корректируем угол для начала с 12 часов
+            angle = (angle + 90 + 360) % 360;
 
+            // Обновляем текущий угол и длительность
             this.currentAngle = angle;
             this.duration = Math.round((angle / 360) * this.maxDuration);
-            
+
             // Ограничиваем значения
             if (this.duration < 1) {
                 this.duration = 1;
@@ -249,6 +252,13 @@ class MeditationApp {
             if (this.duration > this.maxDuration) {
                 this.duration = this.maxDuration;
                 angle = 360;
+            }
+
+            // Если это первое взаимодействие
+            if (!this.hasInteracted) {
+                this.hasInteracted = true;
+                this.timeDisplay.classList.remove('infinity');
+                this.timeDisplay.classList.add('changing');
             }
 
             this.updateUI(angle);
@@ -260,10 +270,14 @@ class MeditationApp {
     }
 
     updateUI(angle) {
-        // Обновляем время
         if (!this.isActive) {
-            this.timeDisplay.textContent = this.duration;
-            
+            // Обновляем отображение времени
+            if (!this.hasInteracted) {
+                this.timeDisplay.textContent = '∞';
+            } else {
+                this.timeDisplay.textContent = this.duration;
+            }
+
             // Обновляем кольцо прогресса
             const circumference = 283;
             const offset = circumference - ((angle / 360) * circumference);
@@ -272,10 +286,11 @@ class MeditationApp {
             // Обновляем маркер
             this.handle.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
         } else {
+            // Обновляем время в формате MM:SS
             const minutes = Math.floor(this.remainingTime / 60);
             const seconds = this.remainingTime % 60;
             this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            
+
             // Обновляем прогресс
             const progress = this.remainingTime / (this.duration * 60);
             const currentAngle = this.startAngle * progress;
