@@ -11,27 +11,16 @@
     <div class="app">
         <!-- Заменяем круговой таймер на стрелочный -->
         <div class="timer">
-            <div class="time-display">
+            <svg class="timer-ring" viewBox="0 0 100 100">
+                <circle class="ring-bg" cx="50" cy="50" r="45" />
+                <circle class="ring-progress" cx="50" cy="50" r="45" />
+            </svg>
+            <div class="handle"></div>
+            <div class="timer-display">
                 <span class="life-label">жизнь</span>
                 <span class="time">∞</span>
                 <span class="label">минут</span>
                 <div class="breathing-text"></div>
-            </div>
-            <div class="slider-container">
-                <div class="slider-track">
-                    <div class="slider-fill"></div>
-                </div>
-                <div class="slider-handle">
-                    <div class="handle-arrow"></div>
-                    <div class="handle-dot"></div>
-                </div>
-                <div class="time-markers">
-                    <span>0</span>
-                    <span>15</span>
-                    <span>30</span>
-                    <span>45</span>
-                    <span>60</span>
-                </div>
             </div>
         </div>
 

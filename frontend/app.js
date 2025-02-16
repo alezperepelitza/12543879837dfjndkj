@@ -225,19 +225,33 @@ class MeditationApp {
         if (this.isDragging && !this.isActive) {
             e.preventDefault();
             
-            const rect = this.sliderTrack.getBoundingClientRect();
-            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const rect = this.timer.getBoundingClientRect();
+            const center = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // Вычисляем угол с учетом того, что 0 градусов - это 12 часов
+            let angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
+            angle = (angle + 90 + 360) % 360; // +90 чтобы начало было сверху
+
+            this.currentAngle = angle;
+            this.duration = Math.round((angle / 360) * this.maxDuration);
             
-            // Вычисляем процент
-            let percent = (x - rect.left) / rect.width;
-            percent = Math.max(0, Math.min(1, percent));
-            
-            // Вычисляем длительность
-            this.duration = Math.round(percent * this.maxDuration);
-            if (this.duration < 1) this.duration = 1;
-            if (this.duration > this.maxDuration) this.duration = this.maxDuration;
-            
-            this.updateUI(this.duration);
+            // Ограничиваем значения
+            if (this.duration < 1) {
+                this.duration = 1;
+                angle = (1 / this.maxDuration) * 360;
+            }
+            if (this.duration > this.maxDuration) {
+                this.duration = this.maxDuration;
+                angle = 360;
+            }
+
+            this.updateUI(angle);
         }
     }
 
@@ -245,22 +259,30 @@ class MeditationApp {
         this.isDragging = false;
     }
 
-    updateUI(duration) {
+    updateUI(angle) {
+        // Обновляем время
         if (!this.isActive) {
-            this.timeDisplay.textContent = duration;
+            this.timeDisplay.textContent = this.duration;
             
-            // Обновляем положение слайдера
-            const percent = (duration / this.maxDuration) * 100;
-            this.sliderHandle.style.left = `${percent}%`;
-            this.sliderFill.style.width = `${percent}%`;
+            // Обновляем кольцо прогресса
+            const circumference = 283;
+            const offset = circumference - ((angle / 360) * circumference);
+            this.ringProgress.style.strokeDashoffset = offset;
+
+            // Обновляем маркер
+            this.handle.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
         } else {
             const minutes = Math.floor(this.remainingTime / 60);
             const seconds = this.remainingTime % 60;
             this.timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             
             // Обновляем прогресс
-            const percent = (this.remainingTime / (this.duration * 60)) * 100;
-            this.sliderFill.style.width = `${percent}%`;
+            const progress = this.remainingTime / (this.duration * 60);
+            const currentAngle = this.startAngle * progress;
+            const circumference = 283;
+            const offset = circumference - ((currentAngle / 360) * circumference);
+            this.ringProgress.style.strokeDashoffset = offset;
+            this.handle.style.transform = `translate(-50%, -50%) rotate(${currentAngle}deg)`;
         }
     }
 
@@ -304,7 +326,7 @@ class MeditationApp {
                 const progress = this.remainingTime / (this.duration * 60);
                 const angle = this.startAngle * progress;
                 
-                this.updateUI(this.duration);
+                this.updateUI(angle);
 
                 if (this.remainingTime <= 0) {
                     this.completeMeditation();
